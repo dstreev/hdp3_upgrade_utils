@@ -8,25 +8,25 @@ These scripts don't make any direct changes to hive, rather they are intended to
 
 ## The Process
 
-1. Run the [sqoop dump utility](./hms_sqoop_dump.sh) to extract a dataset from the Metastore Database.  Sqoop will drop the dataset on HDFS.
+- Run the [sqoop dump utility](./hms_sqoop_dump.sh) to extract a dataset from the Metastore Database.  Sqoop will drop the dataset on HDFS.
     `./hms_sqoop_dump.sh --target-hdfs-dir /warehouse/tablespace/external/hive/<target_db>.db/hms_dump_<env> --jdbc-db-url jdbc:mysql://<host:port>/<db_name> --jdbc-user <user> --jdbc-password <password>`
 
-2. Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
+- Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
     `hive --hive-var DB=<target_db> --hivevar ENV=<env> -f hms_dump_ddl.sql`
     
-3. Validate the dataset is visible via 'beeline'.
+- Validate the dataset is visible via 'beeline'.
     `hive --hive-var DB=<target_db> --hivevar ENV=<env>`
     ```
     use ${DB};
     
     select * from hms_dump_${ENV} limit 10;
     ```
-4. Review each of the following scripts. Each script contains a description of it's function.
-    a. [Distinct Serdes](./distinct_serdes.sql)
-    b. [Acid Table Details](./acid_table_details.sql)
-    c. [Acid Table Conversions](./acid_table_conversions.sql)
-    d. [Missing HDFS Directories Check](./missing_table_dirs.sql)
-        1. The 'hdfs_path_check' field is designed to be copied into a text file an used in [Hadoop CLI](https://github.com/dstreev/hadoop-cli).  Binary Distro of hadoop-cli below.
+- Review each of the following scripts. Each script contains a description of it's function.
+    - [Distinct Serdes](./distinct_serdes.sql)
+    - [Acid Table Details](./acid_table_details.sql)
+    - [Acid Table Conversions](./acid_table_conversions.sql)
+    - [Missing HDFS Directories Check](./missing_table_dirs.sql)
+        - The 'hdfs_path_check' field is designed to be copied into a text file an used in [Hadoop CLI](https://github.com/dstreev/hadoop-cli).  Binary Distro of hadoop-cli below.
         
 ## Hadoop CLI
 
