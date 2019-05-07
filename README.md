@@ -9,7 +9,12 @@ These scripts don't make any direct changes to hive, rather they are intended to
 ## The Process
 
 - Run the [sqoop dump utility](./hms_sqoop_dump.sh) to extract a dataset from the Metastore Database.  Sqoop will drop the dataset on HDFS.
-    `./hms_sqoop_dump.sh --target-hdfs-dir /warehouse/tablespace/external/hive/<target_db>.db/hms_dump_<env> --jdbc-db-url jdbc:mysql://<host:port>/<db_name> --jdbc-user <user> --jdbc-password <password>`
+    ```
+    ./hms_sqoop_dump.sh --target-hdfs-dir \
+    /warehouse/tablespace/external/hive/<target_db>.db/hms_dump_<env> \
+    --jdbc-db-url jdbc:mysql://<host:port>/<db_name> \
+    --jdbc-user <user> --jdbc-password <password>
+    ```
 
 - Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
     `hive --hive-var DB=<target_db> --hivevar ENV=<env> -f hms_dump_ddl.sql`
