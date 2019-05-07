@@ -15,12 +15,15 @@ These scripts don't make any direct changes to hive, rather they are intended to
     --jdbc-db-url jdbc:mysql://<host:port>/<db_name> \
     --jdbc-user <user> --jdbc-password <password>
     ```
-
 - Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
-    `hive --hive-var DB=<target_db> --hivevar ENV=<env> -f hms_dump_ddl.sql`
-    
+    ```
+    hive --hive-var DB=<target_db> --hivevar ENV=<env> -f hms_dump_ddl.sql
+    ```
 - Validate the dataset is visible via 'beeline'.
-    `hive --hive-var DB=<target_db> --hivevar ENV=<env>`
+    ```
+    hive --hive-var DB=<target_db> --hivevar ENV=<env>
+    ```
+    In Beeline:
     ```
     use ${DB};
     
@@ -53,7 +56,7 @@ An interactive 'hdfs' client that can be scripted to reduce the time it takes to
 
 Test a list of directories against 'hdfs' to see if they exist.  See above 'Missing HDFS Directories Check'.
 
-Create a text file (test.txt) and add some commands.  The last line should 'exit'.
+Create a text file (test.txt) and add some commands.  The last line should 'exit' followed by an empty line.
 ```
 test -e /user/ted
 test -e /user/chuck
