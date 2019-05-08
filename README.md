@@ -36,7 +36,7 @@ These scripts don't make any direct changes to hive, rather they are intended to
     - [Missing HDFS Directories Check](./missing_table_dirs.sql)
         > The beeline output can be captured and pushed into the 'HadoopCli' for processing.  The following command will generate a script that can also be run with '-f' option in 'HadoopCli' to create the missing directories.
         ```
-        hive -c llap --hivevar DB=citizens --hivevar ENV=qa --showHeader=false --outputformat=tsv2  -f missing_table_dirs.sql | hadoopcli -stdin 2>&1 >/dev/null | cut -f 4 | sed 's/^/mkdir -p /g' > hcli_mkdir.txt
+        hive -c llap --hivevar DB=<db> --hivevar ENV=<env> --showHeader=false --outputformat=tsv2  -f missing_table_dirs.sql | hadoopcli -stdin 2>&1 >/dev/null | cut -f 4 | sed 's/^/mkdir -p /g' > hcli_mkdir.txt
         ```
         > Review the output file 'hcli_mkdir.txt'.  This can then be processed with 'HadoopCli'
         ```
