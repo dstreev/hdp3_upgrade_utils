@@ -32,6 +32,13 @@ These scripts don't make any direct changes to hive, rather they are intended to
 - Review each of the following scripts. Each script contains a description of it's function.
     - [Distinct Serdes](./distinct_serdes.sql)
     - [Acid Table Details](./acid_table_details.sql)
+        > These details will provide an indication of how many tables are eligible for compaction before the upgrade.  As required before the upgrade, ALL ACIDv1 tables need to be compacted (MAJOR).  ACIDv1 delta files are NOT forward compatible.
+        > This list can provide a clue to the amount of processing that will be required by the compactor before the upgrade.  If this list is large, the pre-upgrade script should be run several days in advance of the upgrade to process any outstand 'major' compactions.  And then run at intervals leading up to the upgrade, to reduce the time it takes for the pre-upgrade processing time when the upgrade is started.
+    - [Table Migration Check](./table_migration_check.sql)
+        > This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' table will be migrated to the new warehouse directory for Hive3.
+        ```
+        
+        ```
     - [Acid Table Conversions](./acid_table_conversions.sql)
     - [Missing HDFS Directories Check](./missing_table_dirs.sql)
         > The beeline output can be captured and pushed into the 'HadoopCli' for processing.  The following command will generate a script that can also be run with '-f' option in 'HadoopCli' to create the missing directories.
