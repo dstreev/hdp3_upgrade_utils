@@ -36,30 +36,31 @@ These scripts don't make any direct changes to hive, rather they are intended to
     - [Missing HDFS Directories Check](./missing_table_dirs.sql)
         > The beeline output can be captured and pushed into the 'HadoopCli' for processing.  The following command will generate a script that can also be run with '-f' option in 'HadoopCli' to create the missing directories.
         ```
-        hive -c llap --hivevar DB=<db> --hivevar ENV=<env> --showHeader=false --outputformat=tsv2  -f missing_table_dirs.sql | hadoopcli -stdin 2>&1 >/dev/null | cut -f 4 | sed 's/^/mkdir -p /g' > hcli_mkdir.txt
+        hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
+        --showHeader=false --outputformat=tsv2  -f missing_table_dirs.sql | \
+        hadoopcli -stdin 2>&1 >/dev/null | cut -f 4 | \
+        sed 's/^/mkdir -p /g' > hcli_mkdir.txt
         ```
-        > Review the output file 'hcli_mkdir.txt'.  This can then be processed with 'HadoopCli'
+        > Review the output file 'hcli_mkdir.txt', edit if necessary and process through 'hadoopcli'.
         ```
         hadoopcli -f hcli_mkdir.txt
         ```
         
 ## Hadoop CLI
 
+An interactive/scripted 'hdfs' client that can be scripted to reduce the time it takes to cycle through 'hdfs' commands.  
+
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
 
 Note: As of this writing, version 2.0.4-SNAPSHOT and above is required for this effort.
 
-Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root):
+Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder.
 
 `./setup.sh`
 
-This will deploy and configure the hadoop-cli.
+Launch the application without parameters will pickup your default configs, just like `hdfs` or `hadoop` command line applications.
 
 `hadoopcli`
-
-With no params, it will pickup your default configs for hadoop in /etc/hadoop/conf.
-
-An interactive 'hdfs' client that can be scripted to reduce the time it takes to cycle through 'hdfs' commands.
 
 ### Usage Scenario
 
@@ -68,7 +69,10 @@ An interactive 'hdfs' client that can be scripted to reduce the time it takes to
 The Hadoop Cli can process `stdin`.  So it can be part of a bash pipeline.  In this case, we run a query in beeline, output the results and create another file with our target commands.
 
 ```
-hive -c llap --hivevar DB=citizens --hivevar ENV=qa --showHeader=false --outputformat=tsv2  -f test.sql | hadoopcli -stdin 2>&1 >/dev/null | cut -f 4 | sed 's/^/mkdir -p /g' > hcli_mkdir.txt
+hive -c llap --hivevar DB=citizens --hivevar ENV=qa \
+--showHeader=false --outputformat=tsv2  -f test.sql | \
+hadoopcli -stdin 2>&1 >/dev/null | cut -f 4 | \
+sed 's/^/mkdir -p /g' > hcli_mkdir.txt
 ```
 
 #### File Based Script
