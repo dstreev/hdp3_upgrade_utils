@@ -37,7 +37,12 @@ These scripts don't make any direct changes to hive, rather they are intended to
     - [Table Migration Check](./table_migration_check.sql)
         > This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' table will be migrated to the new warehouse directory for Hive3.
         ```
-        
+        hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
+        --showHeader=false --outputformat=tsv2 \
+        -f ./hdp3_upgrade_utils/table_migration_check.sql | \
+        cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" \
+        -f user,group,permissions_long,path \2/" | hadoopcli -stdin \
+        | sed "s/^lsp.*//" >result.txt
         ```
     - [Acid Table Conversions](./acid_table_conversions.sql)
     - [Missing HDFS Directories Check](./missing_table_dirs.sql)
@@ -59,7 +64,7 @@ An interactive/scripted 'hdfs' client that can be scripted to reduce the time it
 
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
 
-Note: As of this writing, version 2.0.5-SNAPSHOT and above is required for this effort.
+Note: As of this writing, version 2.0.7-SNAPSHOT and above is required for this effort.
 
 Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder.
 
