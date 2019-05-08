@@ -14,7 +14,7 @@
 
 USE ${DB};
 
-SELECT * FROM (
+SELECT db_name, tbl_name, tbl_type, tbl_serde_slib, CONVERSION_POSSIBLE, hdfs_path FROM (
 SELECT
     db_name ,
     tbl_name,
