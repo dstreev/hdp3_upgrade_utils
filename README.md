@@ -39,10 +39,10 @@ These scripts don't make any direct changes to hive, rather they are intended to
         ```
         hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
         --showHeader=false --outputformat=tsv2 \
-        -f ./hdp3_upgrade_utils/table_migration_check.sql | \
+        -f table_migration_check.sql | \
         cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" \
         -f user,group,permissions_long,path \2/" | hadoopcli -stdin \
-        | sed "s/^lsp.*//" >result.txt
+        | sed "s/^lsp.*//" > migration_check.txt
         ```
     - [Acid Table Conversions](./acid_table_conversions.sql)
     - [Missing HDFS Directories Check](./missing_table_dirs.sql)
