@@ -22,6 +22,7 @@
 
 use ${DB};
 
+SELECT hdfs_path_check FROM (
 SELECT
     db_name ,
     tbl_name,
@@ -52,4 +53,5 @@ where
     and tbl_type != 'VIRTUAL_VIEW'
 group by
     db_name,tbl_name,tbl_type, part_name,
-    regexp_extract(part_location, 'hdfs://([^/]+)(.*)',2);        
+    regexp_extract(part_location, 'hdfs://([^/]+)(.*)',2)
+) sub;        
