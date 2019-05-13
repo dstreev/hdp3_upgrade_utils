@@ -22,6 +22,8 @@ TBLPROPERTIES (
 insert into table test_init_ext (id, street) values ("1", "Hollywood");
 insert into table test_init_ext (id, street) values ("2", "Hollywood");
 
+insert into table test_init_ext_2 select * from test_init_ext;
+
 select * from test_init_ext;
 
 -- Change to Managed

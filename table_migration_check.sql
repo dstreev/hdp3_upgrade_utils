@@ -1,6 +1,6 @@
 /*
 
-    Product a list of tables and directory locations that need to be checked for ownership.
+    Produce a list of tables and directory locations that need to be checked for ownership.
     
     If 'hive' is the owner, then these 'managed' table will be 'migrated' to the new warehouse location:
     `/warehouse/tablespace/managed/hive`

@@ -14,13 +14,14 @@ USE ${DB};
 SELECT DISTINCT
     db_name ,
     tbl_name,
-    tbl_location,
-    count(*)
+    tbl_location
 FROM
     hms_dump_${ENV}
 WHERE
     tbl_param_key = 'transactional'
     AND tbl_param_value = 'true';
+GROUP BY
+    db_name, tbl_name, tbl_location;
 
 
 /*
