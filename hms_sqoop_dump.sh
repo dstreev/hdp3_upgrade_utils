@@ -26,6 +26,7 @@ while [ $# -gt 0 ]; do
     --lower)
       shift
       LOWER='TRUE'
+      ;;
     *)
       break;
   esac
