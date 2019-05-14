@@ -20,7 +20,7 @@ while [ $# -gt 0 ]; do
       ;;
     --jdbc-password)
       shift
-      JDBC_PASSWORD
+      JDBC_PASSWORD=$1
       shift
       ;;
     *)
@@ -30,15 +30,19 @@ done
 
 if [ "${TARGET_HDFS_DIRx}" == "x" ]; then
     echo "Missing --target-hdfs-dir"
+    exit -1
 fi
 if [ "${JDBC_DB_URLx}" == "x" ]; then
     echo "Missing --jdbc-db-url"
+    exit -1
 fi
 if [ "${JDBC_USERx}" == "x" ]; then
     echo "Missing --jdbc-user"
+    exit -1
 fi
 if [ "${JDBC_PASSWORDx}" == "x" ]; then
     echo "Missing --jdbc-password"
+    exit -1
 fi
 
 sqoop-import \
