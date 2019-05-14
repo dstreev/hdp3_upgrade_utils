@@ -58,7 +58,7 @@ else
 fi
 
 sqoop-import \
---query ${SELECT} \
+--query "${SELECT}" \
 --target-dir ${TARGET_HDFS_DIR} \
 -m 1 \
 --connect ${JDBC_DB_URL} \
