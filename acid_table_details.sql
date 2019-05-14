@@ -20,8 +20,6 @@ FROM
 WHERE
     tbl_param_key = 'transactional'
     AND tbl_param_value = 'true';
-GROUP BY
-    db_name, tbl_name, tbl_location;
 
 
 /*

@@ -28,16 +28,16 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ "${TARGET_HDFS_DIRx}" == "x"]; then
+if [ "${TARGET_HDFS_DIRx}" == "x" ]; then
     echo "Missing --target-hdfs-dir"
 fi
-if [ "${JDBC_DB_URLx}" == "x"]; then
+if [ "${JDBC_DB_URLx}" == "x" ]; then
     echo "Missing --jdbc-db-url"
 fi
-if [ "${JDBC_USERx}" == "x"]; then
+if [ "${JDBC_USERx}" == "x" ]; then
     echo "Missing --jdbc-user"
 fi
-if [ "${JDBC_PASSWORDx}" == "x"]; then
+if [ "${JDBC_PASSWORDx}" == "x" ]; then
     echo "Missing --jdbc-password"
 fi
 
