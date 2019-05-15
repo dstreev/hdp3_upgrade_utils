@@ -65,7 +65,8 @@ These scripts don't make any direct changes to hive, rather they are intended to
         > Get a list of table directories to check and run that through the 'Hadoop Cli' below to locate the odd files.
         ```
         hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
-        --showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql \
+        --showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
+        hadoopcli -stdin > out.txt 
         
         ```
         
@@ -75,7 +76,7 @@ An interactive/scripted 'hdfs' client that can be scripted to reduce the time it
 
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
 
-Note: As of this writing, version 2.0.9-SNAPSHOT and above is required for this effort.
+Note: As of this writing, version 2.0.10-SNAPSHOT and above is required for this effort.
 
 Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder.
 
