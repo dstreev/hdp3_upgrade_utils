@@ -31,7 +31,8 @@ USE ${DB};
 
  */
 SELECT
-    concat("lsp -R -F .*.c000 ", hdfs_path) as hcli_check
+    --concat("lsp -R -F .*.c000 ", hdfs_path) as hcli_check
+    hdfs_path as hcli_check
 FROM (
 SELECT
     db_name ,
