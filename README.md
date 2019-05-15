@@ -33,6 +33,18 @@ These scripts don't make any direct changes to hive, rather they are intended to
     
     - [Distinct Serdes](./distinct_serdes.sql)
     - [Find table with Serde x](./serde_tables.sql)
+    - [Check Partition Location](./check_partition_location.sql)
+        > Many assumptions are made about partition locations.  When these location aren't standard, it may have an effect on other migration processes and calculations.  This script will help identify that impact.
+    - [Non-Managed Table Locations](./external_table_location.sql)
+        > Determine the overall size/count of the tables location
+        ```
+        hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
+        --showHeader=false --outputformat=tsv2 \
+        -f external_table_location.sql | \
+        cut -f 3 | sed -r "s/(^.*)/count -h \"\1\"/ | \
+        hadoopcli -stdin | > external_table_stats.txt        
+        ```
+    - [Managed Table Locations](./managed_table_location.sql)
     - [Acid Table Details](./acid_table_details.sql)
         > These details will provide an indication of how many tables are eligible for compaction before the upgrade.  As required before the upgrade, ALL ACIDv1 tables need to be compacted (MAJOR).  ACIDv1 delta files are NOT forward compatible.
         > This list can provide a clue to the amount of processing that will be required by the compactor before the upgrade.  If this list is large, the pre-upgrade script should be run several days in advance of the upgrade to process any outstand 'major' compactions.  And then run at intervals leading up to the upgrade, to reduce the time it takes for the pre-upgrade processing time when the upgrade is started.
