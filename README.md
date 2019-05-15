@@ -97,7 +97,7 @@ An interactive/scripted 'hdfs' client that can be scripted to reduce the time it
 
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
 
-Note: As of this writing, version 2.0.11-SNAPSHOT and above is required for this effort.
+Note: As of this writing, version 2.0.12-SNAPSHOT(or later) and above is required for this effort.
 
 Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder.
 
