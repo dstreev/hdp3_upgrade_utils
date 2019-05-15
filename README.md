@@ -2,9 +2,11 @@
 
 Upgrading from Hive 1/2 to Hive 3 requires several metastore AND data changes to be successful.
 
-This process and the associated scripts are meant to be used as a 'pre-upgrade' planning toolkit that can be used to make the upgrade smoother.
+This process and the associated scripts are meant to be used as a 'pre-upgrade' planning toolkit to make the upgrade smoother.
 
 These scripts don't make any direct changes to hive, rather they are intended to educate and inform you of areas that need attention.  After which, it is up to you to make the adjustments manually.
+
+We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](https://github.com/dstreev/hadoop-cli) to combine information from an extract of the Metastore DB and the contents of HDFS.
 
 ## The Process
 
@@ -15,6 +17,7 @@ These scripts don't make any direct changes to hive, rather they are intended to
     --jdbc-db-url jdbc:mysql://<host:port>/<db_name> \
     --jdbc-user <user> --jdbc-password <password>
     ```
+    > The 'target-hdfs-dir' is where you'll define the 'external' table for this dataset.  The location should coincide with the standard external dataset location.
 - Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
     ```
     hive --hive-var DB=<target_db> --hivevar ENV=<env> -f hms_dump_ddl.sql
