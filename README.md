@@ -36,27 +36,32 @@ These scripts don't make any direct changes to hive, rather they are intended to
     - [Check Partition Location](./check_partition_location.sql)
         > Many assumptions are made about partition locations.  When these location aren't standard, it may have an effect on other migration processes and calculations.  This script will help identify that impact.
     - [Non-Managed Table Locations](./external_table_location.sql)
-        > Determine the overall size/count of the tables location
+        > Determine the overall size/count of the tables locations
         ```
         hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
-        --showHeader=false --outputformat=tsv2 \
-        -f external_table_location.sql | \
-        cut -f 3 | sed -r "s/(^.*)/count -h \"\1\"/ | \
-        hadoopcli -stdin | > external_table_stats.txt        
+        --showHeader=false --outputformat=tsv2 -f external_table_location.sql | \
+        cut -f 3 | sed -r "s/(^.*)/count -h \1/" | \
+        hadoopcli -stdin -s > external_table_stats.txt  
         ```
     - [Managed Table Locations](./managed_table_location.sql)
+        > Determine the overall size/count of the tables locations
+        ```
+        hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
+        --showHeader=false --outputformat=tsv2 -f managed_table_location.sql | \
+        cut -f 3 | sed -r "s/(^.*)/count -h \1/" | \
+        hadoopcli -stdin -s > managed_table_stats.txt  
+        ```
     - [Acid Table Details](./acid_table_details.sql)
         > These details will provide an indication of how many tables are eligible for compaction before the upgrade.  As required before the upgrade, ALL ACIDv1 tables need to be compacted (MAJOR).  ACIDv1 delta files are NOT forward compatible.
         > This list can provide a clue to the amount of processing that will be required by the compactor before the upgrade.  If this list is large, the pre-upgrade script should be run several days in advance of the upgrade to process any outstand 'major' compactions.  And then run at intervals leading up to the upgrade, to reduce the time it takes for the pre-upgrade processing time when the upgrade is started.
     - [Table Migration Check](./table_migration_check.sql)
         > This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' tables will be migrated to the new warehouse directory for Hive3.
         ```
-        hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
-        --showHeader=false --outputformat=tsv2 \
-        -f table_migration_check.sql | \
-        cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" \
-        -f user,group,permissions_long,path \2/" | hadoopcli -stdin \
-        | sed "s/^lsp.*//" > migration_check.txt
+        
+        hive -c llap --hivevar DB=priv_dstreev --hivevar ENV=home \
+        --showHeader=false --outputformat=tsv2 -f table_migration_check.sql | \
+        cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissions_long,path \2/" | \
+        hadoopcli -stdin -s > migration_check.txt
         ```
     - [Acid Table Conversions](./acid_table_conversions.sql)
         > This script provides a bit more detail then [Table Migration Check](./table_migration_check.sql), which only looks for tables in the standard location.
@@ -65,7 +70,7 @@ These scripts don't make any direct changes to hive, rather they are intended to
         ```
         hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
         --showHeader=false --outputformat=tsv2  -f missing_table_dirs.sql | \
-        hadoopcli -stdin 2>&1 >/dev/null | cut -f 4 | \
+        hadoopcli -stdin -s 2>&1 >/dev/null | cut -f 4 | \
         sed 's/^/mkdir -p /g' > hcli_mkdir.txt
         ```
         > Review the output file 'hcli_mkdir.txt', edit if necessary and process through 'hadoopcli'.
@@ -79,7 +84,7 @@ These scripts don't make any direct changes to hive, rather they are intended to
         ```
         hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
         --showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
-        hadoopcli -stdin > out.txt 
+        hadoopcli -stdin -s > out.txt 
         
         ```
         
@@ -89,7 +94,7 @@ An interactive/scripted 'hdfs' client that can be scripted to reduce the time it
 
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
 
-Note: As of this writing, version 2.0.10-SNAPSHOT and above is required for this effort.
+Note: As of this writing, version 2.0.11-SNAPSHOT and above is required for this effort.
 
 Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder.
 

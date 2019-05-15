@@ -11,4 +11,6 @@ SELECT DISTINCT
 FROM
     hms_dump_${ENV}
 WHERE
-    tbl_type = "MANAGED_TABLE";
+    tbl_type = "MANAGED_TABLE"
+    AND db_name != 'sys'
+    AND db_name != 'information_schema';
