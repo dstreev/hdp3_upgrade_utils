@@ -62,6 +62,7 @@ These scripts don't make any direct changes to hive, rather they are intended to
         ```
     - [Conversion Table Directories](./table_dirs_for_conversion.sql) Locate Files that will prevent tables from Converting to ACID.
         > The 'alter' statements used to create a transactional table require a specific file pattern for existing files.  Files that don't match this, will cause issues with the upgrade.
+        >> NOTE: The current test is for *.c000 ONLY.  The sql needs to be adjusted to match a different regex.
         > Get a list of table directories to check and run that through the 'Hadoop Cli' below to locate the odd files.
         ```
         hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
