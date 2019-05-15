@@ -61,7 +61,7 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
         > This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' tables will be migrated to the new warehouse directory for Hive3.
         ```
         
-        hive -c llap --hivevar DB=priv_dstreev --hivevar ENV=home \
+        hive -c llap --hivevar DB=<taget_db> --hivevar ENV=<env> \
         --showHeader=false --outputformat=tsv2 -f table_migration_check.sql | \
         cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissions_long,path \2/" | \
         hadoopcli -stdin -s > migration_check.txt
