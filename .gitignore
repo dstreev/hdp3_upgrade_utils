@@ -1,3 +1,7 @@
+# IntelliJ
+*.iml
+.idea
+
 # DBVisual Working Files
 
 *.met
