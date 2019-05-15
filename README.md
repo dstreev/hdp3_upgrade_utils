@@ -87,9 +87,11 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
         ```
         hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
         --showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
-        hadoopcli -stdin -s > out.txt 
+        sed -r "s/(^.*)/lsp -R -F <pattern> \1/" | hadoopcli -stdin -s > out.txt 
         
         ```
+        >> Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
+        >>> `lsp -R -F .*.c000 <path>` will recurse the path looking for files with a 'c000' extension.
         
 ## Hadoop CLI
 
