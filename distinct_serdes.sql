@@ -21,4 +21,3 @@ SELECT DISTINCT
     part_serde_slib
 FROM
     hms_dump_${ENV};
-
