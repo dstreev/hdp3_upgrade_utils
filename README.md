@@ -20,11 +20,11 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
     > The 'target-hdfs-dir' is where you'll define the 'external' table for this dataset.  The location should coincide with the standard external dataset location.
 - Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
     ```
-    hive --hive-var DB=<target_db> --hivevar ENV=<env> -f hms_dump_ddl.sql
+    hive --hivevar DB=<target_db> --hivevar ENV=<env> -f hms_dump_ddl.sql
     ```
 - Validate the dataset is visible via 'beeline'.
     ```
-    hive --hive-var DB=<target_db> --hivevar ENV=<env>
+    hive --hivevar DB=<target_db> --hivevar ENV=<env>
     ```
     In Beeline:
     ```
