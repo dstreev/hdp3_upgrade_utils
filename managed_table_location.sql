@@ -1,7 +1,3 @@
-/*
-
- */
-
 USE ${DB};
 
 SELECT DISTINCT

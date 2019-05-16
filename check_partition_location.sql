@@ -1,11 +1,7 @@
-/*
-
-    When the location of the partition isn't based at the root of the table location, many assumptions
-    are no longer valid.
-
-    This script will help understand the impact.
-
-*/
+--     When the location of the partition isn't based at the root of the table location, many assumptions
+--     are no longer valid.
+--
+--     This script will help understand the impact.
 
 use ${DB};
 

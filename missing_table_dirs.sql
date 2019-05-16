@@ -1,24 +1,21 @@
-/*
+--     Hive Migration Scripts will fail against tables without supporting
+--     filesystem directories.
+--
+--     List all distinct Tbl and Partition Directories
+--     Used the resulting 'hdfs_path' items to validate existence.
+--
+--     With this list, find the missing directories and do
+--         one or the following:
+--
+--     1. Create the missing directory (Hive needs RWX permissions on the directory)
+--     2. Remove the Table Schema
+--
+--
+--         Variables:
+--         DB - The database you placed the hms dump table.
+--         ENV - IE: dev,qa,prod.  Used to support multiple
+--                 environment dump files in the same database.
 
-    Hive Migration Scripts will fail against tables without supporting
-    filesystem directories.
-
-    List all distinct Tbl and Partition Directories
-    Used the resulting 'hdfs_path' items to validate existence.
-
-    With this list, find the missing directories and do 
-        one or the following:
-        
-    1. Create the missing directory (Hive needs RWX permissions on the directory)
-    2. Remove the Table Schema
-    
-    
-        Variables:
-        DB - The database you placed the hms dump table.
-        ENV - IE: dev,qa,prod.  Used to support multiple 
-                environment dump files in the same database.
-
-*/
 
 use ${DB};
 

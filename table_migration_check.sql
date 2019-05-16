@@ -1,16 +1,12 @@
-/*
-
-    Produce a list of tables and directory locations that need to be checked for ownership.
-    
-    If 'hive' is the owner, then these 'managed' table will be 'migrated' to the new warehouse location:
-    `/warehouse/tablespace/managed/hive`
-    
-        Variables:
-        DB - The database you placed the hms dump table.
-        ENV - IE: dev,qa,prod.  Used to support multiple 
-                environment dump files in the same database.
-
-*/
+--     Produce a list of tables and directory locations that need to be checked for ownership.
+--
+--     If 'hive' is the owner, then these 'managed' table will be 'migrated' to the new warehouse location:
+--     `/warehouse/tablespace/managed/hive`
+--
+--         Variables:
+--         DB - The database you placed the hms dump table.
+--         ENV - IE: dev,qa,prod.  Used to support multiple
+--                 environment dump files in the same database.
 
 USE ${DB};
 
