@@ -100,6 +100,7 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
         
     - [Missing HDFS Directories Check](./missing_table_dirs.sql)
         > The beeline output can be captured and pushed into the 'HadoopCli' for processing.  The following command will generate a script that can also be run with '-f' option in 'HadoopCli' to create the missing directories.
+        > Even though we push this through hadoopcli for the hdfs test function, this will take some time to run.  If you want to see the progress, open another window session and tail the 'hcli_mkdir.txt' file.
         
         `hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> -f missing_table_dirs.sql`
         
@@ -123,8 +124,7 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
         ```
         hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> \
         --showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
-        sed -r "s/(^.*)/lsp -R -F <pattern> \1/" | hadoopcli -stdin -s > out.txt 
-        
+        sed -r "s/(^.*)/lsp -R -F <pattern> \1/" | hadoopcli -stdin -s > out.txt         
         ```
         >> Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
         >>> `lsp -R -F .*.c000 <path>` will recurse the path looking for files with a 'c000' extension.
