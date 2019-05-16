@@ -75,8 +75,12 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
         > These details will provide an indication of how many tables are eligible for compaction before the upgrade.  As required before the upgrade, ALL ACIDv1 tables need to be compacted (MAJOR).  ACIDv1 delta files are NOT forward compatible.
         > This list can provide a clue to the amount of processing that will be required by the compactor before the upgrade.  If this list is large, the pre-upgrade script should be run several days in advance of the upgrade to process any outstand 'major' compactions.  And then run at intervals leading up to the upgrade, to reduce the time it takes for the pre-upgrade processing time when the upgrade is started.
         
-        `hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> -f acid_table_details.sq`
+        `hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> -f acid_table_details.sql`
         
+    - [Acid Tables Location](./acid_table_location_status.sql)
+        
+        `hive -c llap --hivevar DB=<target_db> --hivevar ENV=<env> -f acid_table_location_status.sql`
+            
     - [Table Migration Check](./table_migration_check.sql)
         > This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' tables will be migrated to the new warehouse directory for Hive3.
         
