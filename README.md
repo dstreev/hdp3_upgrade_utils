@@ -20,6 +20,8 @@ We use Hive throughout this process.  The process has been validated against Hiv
 ## The Process
 
 - Run the [sqoop dump utility](./hms_sqoop_dump.sh) to extract a dataset from the Metastore Database.  Sqoop will drop the dataset on HDFS.
+    > NOTE: If you have defined 'lower_case_table_names' in my.cnf for MySql/MariaDB, add the --lower option to the call to select the correct extract sql for 'Sqoop'.
+
     ```
     ./hms_sqoop_dump.sh --target-hdfs-dir \
     /warehouse/tablespace/external/hive/<target_db>.db/hms_dump_<env> \
