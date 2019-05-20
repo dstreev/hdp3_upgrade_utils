@@ -1,21 +1,19 @@
---   ACID Table Details
+-- ACID Table Details
 --
---       Variables:
---         DB - The database you placed the hms dump table.
---         ENV - IE: dev,qa,prod.  Used to support multiple
---                 environment dump files in the same database.
-
-
+-- Variables:
+-- DB - The database you placed the hms dump table.
+-- ENV - IE: dev,qa,prod.  Used to support multiple
+-- environment dump files in the same database.
 USE ${DB};
 
 -- List ACID Tables.
 SELECT DISTINCT
-    db_name ,
-    tbl_name,
-    tbl_location
+    DB_NAME
+  , TBL_NAME
+  , TBL_LOCATION
 FROM
-    hms_dump_${ENV}
+    HMS_DUMP_${ENV}
 WHERE
-    tbl_param_key = 'transactional'
-    AND tbl_param_value = 'true';
-
+      TBL_PARAM_KEY = 'transactional'
+  AND TBL_PARAM_VALUE = 'true'
+;

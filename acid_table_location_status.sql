@@ -12,22 +12,22 @@
 --    If the list is long, ensure you've tuned the compactor with enough
 --    resources to address the volume requirements!!!
 
-use ${DB};
+USE ${DB};
 
 SELECT DISTINCT
-    db_name                                                     ,
-    tbl_name                                                    ,
-    regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)',2) AS path,
+    db_name,
+    tbl_name,
+    regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2) AS path,
     CASE
         WHEN locate('/warehouse/tablespace/managed/hive', tbl_location) + locate
-            ('/apps/hive/warehouse',tbl_location) > 0
+            ('/apps/hive/warehouse', tbl_location) > 0
             THEN 'YES'
         ELSE 'NO'
-        END AS Standard_Location
+        END                                               AS Standard_Location
 FROM
     hms_dump_${ENV}
 WHERE
-  tbl_param_key = 'transactional'
+      tbl_param_key = 'transactional'
   AND tbl_param_value = 'true';
-  --AND locate('/warehouse/tablespace/managed/hive', tbl_location) + locate('/apps/hive/warehouse',
-                                                                          tbl_location) = 0;
+--AND locate('/warehouse/tablespace/managed/hive', tbl_location) + locate('/apps/hive/warehouse',
+tbl_location) = 0;

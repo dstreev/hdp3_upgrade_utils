@@ -9,12 +9,12 @@
 
 USE ${DB};
 
-SELECT
-    DISTINCT DB_NAME, DB_DEFAULT_LOC, TBL_NAME, TBL_LOCATION
-FROM
-    hms_dump_${ENV}
-WHERE
-    tbl_type = "MANAGED_TABLE"
-    AND db_name != 'sys'
-    AND db_name != 'information_schema'
-    AND instr(TBL_LOCATION, DB_DEFAULT_LOC) != 1;
+SELECT DISTINCT DB_NAME,
+                DB_DEFAULT_LOC,
+                TBL_NAME,
+                TBL_LOCATION
+FROM hms_dump_${ENV}
+WHERE tbl_type = "MANAGED_TABLE"
+  AND db_name != 'sys'
+  AND db_name != 'information_schema'
+  AND instr(TBL_LOCATION, DB_DEFAULT_LOC) != 1;

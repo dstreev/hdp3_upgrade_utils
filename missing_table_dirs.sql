@@ -19,36 +19,29 @@
 
 use ${DB};
 
-SELECT hdfs_path_check FROM (
-SELECT
-    db_name ,
-    tbl_name,
-    tbl_type,
-    null as part_name,
-    concat('test ', '-e ', regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)',2)) AS hdfs_path_check,
-    count(1)
-from
-    hms_dump_${ENV}
-where
-    part_name is null
-    and tbl_type != 'VIRTUAL_VIEW'
-group by
-    db_name,tbl_name,tbl_type, part_name,
-    regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)',2)
-union all
-select
-    db_name,
-    tbl_name,
-    tbl_type,
-    part_name,
-    concat('test ', '-e ', regexp_extract(part_location, 'hdfs://([^/]+)(.*)',2)) AS hdfs_path_path_check,
-    count(1)
-from
-    hms_dump_${ENV}
-where
-    part_name is not null
-    and tbl_type != 'VIRTUAL_VIEW'
-group by
-    db_name,tbl_name,tbl_type, part_name,
-    regexp_extract(part_location, 'hdfs://([^/]+)(.*)',2)
-) sub;        
+SELECT hdfs_path_check
+FROM (
+         SELECT db_name,
+                tbl_name,
+                tbl_type,
+                null                                                                          AS part_name,
+                concat('test ', '-e ', regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2)) AS hdfs_path_check,
+                count(1)
+         from hms_dump_${ENV}
+         where part_name is null
+           and tbl_type != 'VIRTUAL_VIEW'
+         group by db_name, tbl_name, tbl_type, part_name,
+                  regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2)
+         union all
+         select db_name,
+                tbl_name,
+                tbl_type,
+                part_name,
+                concat('test ', '-e ', regexp_extract(part_location, 'hdfs://([^/]+)(.*)', 2)) AS hdfs_path_path_check,
+                count(1)
+         from hms_dump_${ENV}
+         where part_name is not null
+           and tbl_type != 'VIRTUAL_VIEW'
+         group by db_name, tbl_name, tbl_type, part_name,
+                  regexp_extract(part_location, 'hdfs://([^/]+)(.*)', 2)
+     ) sub;

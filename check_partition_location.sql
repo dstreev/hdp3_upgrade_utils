@@ -3,27 +3,25 @@
 --
 --     This script will help understand the impact.
 
-use ${DB};
+USE ${DB};
 
 SELECT
-    db_name,
-    tbl_name,
-    tbl_location,
-    part_location,
-    part_compliance
-FROM (
-select
-    db_name,
-    tbl_name,
-    tbl_location,
-    part_location,
-    CASE
-        WHEN instr(part_location,tbl_location) = 1 THEN "IN"
-        ELSE "OUT"
-        END part_compliance
-from
-     hms_dump_${ENV}
-where
-      part_name is not null) sub
+    db_name
+  , tbl_name
+  , tbl_location
+  , part_location
+  , part_compliance
+FROM
+    (
+    SELECT
+        db_name
+      , tbl_name
+      , tbl_location
+      , part_location
+      , CASE WHEN instr(part_location, tbl_location) = 1 THEN "IN" ELSE "OUT" END AS part_compliance
+    FROM
+        hms_dump_${ENV}
+    WHERE
+        part_name IS NOT NULL ) sub
 WHERE
     sub.part_compliance = "OUT";

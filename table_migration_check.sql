@@ -10,38 +10,40 @@
 
 USE ${DB};
 
-SELECT db_name, tbl_name, tbl_type, tbl_serde_slib, CONVERSION_POSSIBLE, hdfs_path FROM (
-SELECT
-    db_name ,
-    tbl_name,
-    tbl_type,
-    tbl_serde_slib,
-    regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)',2) AS hdfs_path,
-    -- Look for Manage table that are NOT 'transaction' AND are ORC format AND are MANAGED.
-    CASE
-      WHEN tbl_type = "MANAGED_TABLE"
-        -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
-        AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)',2),'/apps/hive/warehouse') = 1
-        AND tbl_serde_slib = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
-      THEN "ACIDv2/Migrate"
-      WHEN tbl_type = "MANAGED_TABLE"
-        -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
-        AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)',2),'/apps/hive/warehouse') = 1
-        AND tbl_serde_slib != "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
-      THEN "ACIDv2(append)/Migrate"
-      ELSE "NO"
-    END CONVERSION_POSSIBLE
-FROM
-    hms_dump_${ENV}
-WHERE
-    db_name != "information_schema"
-    AND db_name != "sys"
-    AND tbl_name is not null
-GROUP BY
-    db_name ,
-    tbl_name,
-    tbl_type,
-    tbl_location,
-    tbl_serde_slib
-ORDER BY db_name, tbl_name) sub
+SELECT db_name,
+       tbl_name,
+       tbl_type,
+       tbl_serde_slib,
+       CONVERSION_POSSIBLE,
+       hdfs_path
+FROM (
+         SELECT db_name,
+                tbl_name,
+                tbl_type,
+                tbl_serde_slib,
+                regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2) AS hdfs_path,
+                -- Look for Manage table that are NOT 'transaction' AND are ORC format AND are MANAGED.
+                CASE
+                    WHEN tbl_type = "MANAGED_TABLE"
+                        -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
+                        AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '/apps/hive/warehouse') = 1
+                        AND tbl_serde_slib = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
+                        THEN "ACIDv2/Migrate"
+                    WHEN tbl_type = "MANAGED_TABLE"
+                        -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
+                        AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '/apps/hive/warehouse') = 1
+                        AND tbl_serde_slib != "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
+                        THEN "ACIDv2(append)/Migrate"
+                    ELSE "NO"
+                    END                                               AS CONVERSION_POSSIBLE
+         FROM hms_dump_${ENV}
+         WHERE db_name != "information_schema"
+           AND db_name != "sys"
+           AND tbl_name is not null
+         GROUP BY db_name,
+                  tbl_name,
+                  tbl_type,
+                  tbl_location,
+                  tbl_serde_slib
+         ORDER BY db_name, tbl_name) sub
 WHERE sub.CONVERSION_POSSIBLE != 'NO';
