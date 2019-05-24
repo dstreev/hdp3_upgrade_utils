@@ -13,6 +13,7 @@
 
 USE ${DB};
 
+-- Distinct List of Serdes
 
 SELECT DISTINCT
     tbl_serde_slib,
