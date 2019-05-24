@@ -89,24 +89,32 @@ export OUTPUT_DIR=/tmp
         ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
         --showHeader=false --outputformat=tsv2 -f external_table_location.sql | \
         cut -f 3 | sed -r "s/(^.*)/count \1/" | \
-        hadoopcli -stdin -s | sed -r "s/[ ]{2,}/\t/g" | sed -r "s/\s\//\t\//g" | sed -r "s/^\t//g"> ${OUTPUT_DIR}/external_table_stats.txt  
+        hadoopcli -stdin -s | sed -r "s/[ ]{2,}/\t/g" | sed -r "s/\s\//\t\//g" | \
+        sed -r "s/^\t//g"> ${OUTPUT_DIR}/external_table_stats.txt  
         ```
         > Copy the above file to HDFS
-        `hdfs dfs -copyFromLocal ${OUTPUT_DIR}/external_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}`
+        ```
+        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/external_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}
+        ```
     - [Managed Table Locations](./managed_table_location.sql)
         > Determine the overall size/count of the tables locations
         
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
-                 --showHeader=false --outputformat=tsv2 -f managed_table_location.sql`
+        ```
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+                 --showHeader=false --outputformat=tsv2 -f managed_table_location.sql
+        ```
         
         ```
         ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
         --showHeader=false --outputformat=tsv2 -f managed_table_location.sql | \
         cut -f 3 | sed -r "s/(^.*)/count \1/" | \
-        hadoopcli -stdin -s | sed -r "s/[ ]{2,}/\t/g" | sed -r "s/\s\//\t\//g" | sed -r "s/^\t//g" > ${OUTPUT_DIR}/managed_table_stats.txt  
+        hadoopcli -stdin -s | sed -r "s/[ ]{2,}/\t/g" | sed -r "s/\s\//\t\//g" | \
+        sed -r "s/^\t//g" > ${OUTPUT_DIR}/managed_table_stats.txt  
         ```
         > Copy the above file to HDFS
-        `hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}`
+        ```
+        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}
+        ```
     - For LARGE Hive Installations, build an alter Migration Script
         > The Migration Script MUST run against EVERY DB. These migration scripts MUST be completed BEFORE users are allowed back on the cluster.  This process is intended to allow the 'parallel' running of the core 'HiveStrictManagedMigration' process when upgrade to Hive 3. Default processing through Ambari of this script is NOT threaded and therefore can take a very long time in environments with a lot of metadata.
         > With the data collected from 'External/Managed Table Locations', we can run the following and get table and db sizes.
@@ -115,12 +123,15 @@ export OUTPUT_DIR=/tmp
                 --showHeader=false --outputformat=tsv2 -f size_of_dbs.sql > ${OUTPUT_DIR}/dbs_sizes.txt
         ```
         > The output will be a list of databases with the following:
-            - db_name
-            - tbl_count
-            - folder_count
-            - file_count
-            - total_size
+
+        - db_name
+        - tbl_count
+        - folder_count
+        - file_count
+        - total_size
+
         > TODO: Modify Upgrade Process to Skip/Shortcut migration script.
+
         > TODO: Build out replace Migration Script with information gathered in this process.
         
     - [Acid Table Details](./acid_table_details.sql)
