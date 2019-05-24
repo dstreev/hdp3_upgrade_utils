@@ -15,12 +15,11 @@ USE ${DB};
 --     Find Table with specific serde.
 
 SELECT
-    db_name,
-    tbl_name,
-    COUNT(*)
+    db_name
+  , tbl_name
+  , COUNT(*)
 FROM
     hms_dump_${ENV}
 WHERE
     tbl_serde_slib = "${SERDE}"
-GROUP BY db_name,
-         tbl_name;
+GROUP BY db_name, tbl_name;

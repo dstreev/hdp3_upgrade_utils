@@ -16,7 +16,7 @@ USE ${DB};
 -- Distinct List of Serdes
 
 SELECT DISTINCT
-    tbl_serde_slib,
-    part_serde_slib
+    tbl_serde_slib
+  , part_serde_slib
 FROM
     hms_dump_${ENV};

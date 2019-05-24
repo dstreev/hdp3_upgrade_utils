@@ -15,5 +15,4 @@ FROM
     HMS_DUMP_${ENV}
 WHERE
       TBL_PARAM_KEY = 'transactional'
-  AND TBL_PARAM_VALUE = 'true'
-;
+  AND TBL_PARAM_VALUE = 'true';

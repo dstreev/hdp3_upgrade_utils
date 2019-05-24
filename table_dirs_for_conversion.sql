@@ -23,40 +23,41 @@
 USE ${DB};
 
 --  TODO: This doesn't currently consider tables with partitions that don't reside in the parent directory.
-
-SELECT hdfs_path as hcli_check
-FROM (
-         SELECT db_name,
-                tbl_name,
-                tbl_type,
-                tbl_serde_slib,
-                regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2) AS hdfs_path,
-                CASE
+WITH sub AS (
+            SELECT
+                db_name
+              , tbl_name
+              , tbl_type
+              , tbl_serde_slib
+              , regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2) AS hdfs_path
+              , CASE
                     WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)),
-                                         "transactional:true")
-                        AND tbl_type = "MANAGED_TABLE"
+                                         "transactional:true") AND tbl_type = "MANAGED_TABLE"
                         -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
                         AND tbl_serde_slib = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
                         THEN "ACID"
                     WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)),
-                                         "transactional:true")
-                        AND tbl_type = "MANAGED_TABLE"
+                                         "transactional:true") AND tbl_type = "MANAGED_TABLE"
                         -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
-                        AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '/apps/hive/warehouse') = 1
-                        AND tbl_serde_slib != "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
+                        AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '/apps/hive/warehouse') = 1 AND
+                         tbl_serde_slib != "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
                         THEN "Micro-Managed"
                     ELSE "NO"
-                    END                                               AS conversion
-         FROM hms_dump_${ENV}
-         WHERE db_name != "information_schema"
-           AND tbl_type != 'VIRTUAL_VIEW'
-           AND tbl_type != 'EXTERNAL_TABLE'
-           AND db_name != "sys"
-           AND tbl_name is not null
-         GROUP BY db_name,
-                  tbl_name,
-                  tbl_type,
-                  tbl_location,
-                  tbl_serde_slib) sub
-WHERE conversion != "NO"
+                END                                                   AS conversion
+            FROM
+                hms_dump_${ENV}
+            WHERE
+                  db_name != "information_schema"
+              AND tbl_type != 'VIRTUAL_VIEW'
+              AND tbl_type != 'EXTERNAL_TABLE'
+              AND db_name != "sys"
+              AND tbl_name IS NOT NULL
+            GROUP BY db_name, tbl_name, tbl_type, tbl_location, tbl_serde_slib
+            )
+SELECT
+    hdfs_path AS hcli_check
+FROM
+    sub
+WHERE
+    conversion != "NO"
 ORDER BY db_name, tbl_name;

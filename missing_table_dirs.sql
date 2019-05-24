@@ -17,31 +17,48 @@
 --                 environment dump files in the same database.
 
 
-use ${DB};
+USE ${DB};
+WITH TBL_LOCATIONS  AS (
+                       SELECT
+                           db_name
+                         , tbl_name
+                         , tbl_type
+                         , NULL                                                                          AS part_name
+                         , concat('test ', '-e ',
+                                  regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2))                 AS hdfs_path_check
+                         , count(1)
+                       FROM
+                           hms_dump_${ENV}
+                       WHERE
+                             part_name IS NULL
+                         AND tbl_type != 'VIRTUAL_VIEW'
+                       GROUP BY db_name, tbl_name, tbl_type, part_name
+                                       , regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2)
+                       )
+   , PART_LOCATIONS AS (
+                       SELECT
+                           db_name
+                         , tbl_name
+                         , tbl_type
+                         , part_name
+                         , concat('test ', '-e ',
+                                  regexp_extract(part_location, 'hdfs://([^/]+)(.*)', 2)) AS hdfs_path_check
+                         , count(1)
+                       FROM
+                           hms_dump_${ENV}
+                       WHERE
+                             part_name IS NOT NULL
+                         AND tbl_type != 'VIRTUAL_VIEW'
+                       GROUP BY db_name, tbl_name, tbl_type, part_name
+                                       , regexp_extract(part_location, 'hdfs://([^/]+)(.*)', 2)
+                       )
 
-SELECT hdfs_path_check
-FROM (
-         SELECT db_name,
-                tbl_name,
-                tbl_type,
-                null                                                                          AS part_name,
-                concat('test ', '-e ', regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2)) AS hdfs_path_check,
-                count(1)
-         from hms_dump_${ENV}
-         where part_name is null
-           and tbl_type != 'VIRTUAL_VIEW'
-         group by db_name, tbl_name, tbl_type, part_name,
-                  regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2)
-         union all
-         select db_name,
-                tbl_name,
-                tbl_type,
-                part_name,
-                concat('test ', '-e ', regexp_extract(part_location, 'hdfs://([^/]+)(.*)', 2)) AS hdfs_path_path_check,
-                count(1)
-         from hms_dump_${ENV}
-         where part_name is not null
-           and tbl_type != 'VIRTUAL_VIEW'
-         group by db_name, tbl_name, tbl_type, part_name,
-                  regexp_extract(part_location, 'hdfs://([^/]+)(.*)', 2)
-     ) sub;
+SELECT
+    hdfs_path_check
+FROM
+    TBL_LOCATIONS
+UNION ALL
+SELECT
+    hdfs_path_check
+FROM
+    PART_LOCATIONS;

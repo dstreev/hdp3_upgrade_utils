@@ -24,46 +24,39 @@
 USE ${DB};
 
 SELECT
-    db_name,
-    tbl_name,
-    tbl_type,
-    tbl_serde_slib,
-    regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2) AS hdfs_path,
+    db_name
+  , tbl_name
+  , tbl_type
+  , tbl_serde_slib
+  , regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2) AS hdfs_path
+  ,
     -- Look for Manage table that are NOT 'transaction' AND are ORC format AND are MANAGED.
     CASE
-        WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)),
-                             "transactional:true")
-            AND tbl_type = "MANAGED_TABLE"
+        WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)), "transactional:true") AND
+             tbl_type = "MANAGED_TABLE"
             -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
-            AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '/apps/hive/warehouse') = 1
-            AND tbl_serde_slib = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
+            AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '/apps/hive/warehouse') = 1 AND
+             tbl_serde_slib = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
             THEN "ACIDv2/Migrate from Non-ACID"
-        WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)),
-                             "transactional:true")
-            AND tbl_type = "MANAGED_TABLE"
-            AND tbl_serde_slib = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
+        WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)), "transactional:true") AND
+             tbl_type = "MANAGED_TABLE" AND tbl_serde_slib = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
             THEN "ACIDv2 from Non-ACID"
-        WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)),
-                             "transactional:true")
-            AND tbl_type = "MANAGED_TABLE"
+        WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)), "transactional:true") AND
+             tbl_type = "MANAGED_TABLE"
             -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
-            AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '/apps/hive/warehouse') = 1
-            AND tbl_serde_slib != "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
+            AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '/apps/hive/warehouse') = 1 AND
+             tbl_serde_slib != "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
             THEN "ACIDv2(append)/Migrate from Non-ACID"
-        WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)),
-                             "transactional:true")
-            AND tbl_type = "MANAGED_TABLE"
-            AND tbl_serde_slib != "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
+        WHEN !array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)), "transactional:true") AND
+             tbl_type = "MANAGED_TABLE" AND tbl_serde_slib != "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
             THEN "ACIDv2(append) from Non-ACID"
-        WHEN array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)),
-                            "transactional:true")
-            AND tbl_type = "MANAGED_TABLE"
-            -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
+        WHEN array_contains(collect_set(concat_ws(":", tbl_param_key, tbl_param_value)), "transactional:true") AND
+             tbl_type = "MANAGED_TABLE" -- If the base directory is the warehouse, then it may be migrated if owned by 'hive'.
             --AND instr(regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)',2),'/apps/hive/warehouse') = 1
             AND tbl_serde_slib = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
             THEN "ACIDv2 from ACIDv1"
         ELSE "NO"
-        END                                               AS CONVERSION_POSSIBLE
+    END                                                   AS CONVERSION_POSSIBLE
 FROM
     hms_dump_${ENV}
 WHERE
@@ -72,10 +65,5 @@ WHERE
   AND tbl_type != 'EXTERNAL_TABLE'
   AND db_name != "sys"
   AND tbl_name IS NOT NULL
-GROUP BY
-    db_name,
-    tbl_name,
-    tbl_type,
-    tbl_location,
-    tbl_serde_slib
+GROUP BY db_name, tbl_name, tbl_type, tbl_location, tbl_serde_slib
 ORDER BY db_name, tbl_name;

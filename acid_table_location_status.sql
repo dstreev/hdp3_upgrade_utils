@@ -15,15 +15,15 @@
 USE ${DB};
 
 SELECT DISTINCT
-    db_name,
-    tbl_name,
-    regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2) AS path,
-    CASE
-        WHEN locate('/warehouse/tablespace/managed/hive', tbl_location) + locate
-            ('/apps/hive/warehouse', tbl_location) > 0
+    db_name
+  , tbl_name
+  , regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2) AS path
+  , CASE
+        WHEN locate('/warehouse/tablespace/managed/hive', tbl_location) + locate('/apps/hive/warehouse', tbl_location) >
+             0
             THEN 'YES'
         ELSE 'NO'
-        END                                               AS Standard_Location
+    END                                                   AS Standard_Location
 FROM
     hms_dump_${ENV}
 WHERE
