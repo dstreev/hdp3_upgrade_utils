@@ -80,8 +80,10 @@ export OUTPUT_DIR=/tmp
     - [Non-Managed Table Locations](./external_table_location.sql)
         > Determine the overall size/count of the tables locations
         
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
-                 --showHeader=false --outputformat=tsv2 -f external_table_location.sql`
+        ```
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+          --showHeader=false --outputformat=tsv2 -f external_table_location.sql
+        ```
         
         ```
         ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
@@ -106,30 +108,38 @@ export OUTPUT_DIR=/tmp
         > Copy the above file to HDFS
         `hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}`
     - For LARGE Hive Installations, build an alter Migration Script
+        > The Migration Script MUST run against EVERY DB. These migration scripts MUST be completed BEFORE users are allowed back on the cluster.  This process is intended to allow the 'parallel' running of the core 'HiveStrictManagedMigration' process when upgrade to Hive 3. Default processing through Ambari of this script is NOT threaded and therefore can take a very long time in environments with a lot of metadata.
         > With the data collected from 'External/Managed Table Locations', we can run the following and get table and db sizes.
         ```
         ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
-                --showHeader=false --outputformat=tsv2 -f size_of_dbs.sql
+                --showHeader=false --outputformat=tsv2 -f size_of_dbs.sql > ${OUTPUT_DIR}/dbs_sizes.txt
         ```
-        
-        
+        > The output will be a list of databases with the following:
+            - db_name
+            - tbl_count
+            - folder_count
+            - file_count
+            - total_size
+        > TODO: Modify Upgrade Process to Skip/Shortcut migration script.
+        > TODO: Build out replace Migration Script with information gathered in this process.
         
     - [Acid Table Details](./acid_table_details.sql)
         > These details will provide an indication of how many tables are eligible for compaction before the upgrade.  As required before the upgrade, ALL ACIDv1 tables need to be compacted (MAJOR).  ACIDv1 delta files are NOT forward compatible.
         > This list can provide a clue to the amount of processing that will be required by the compactor before the upgrade.  If this list is large, the pre-upgrade script should be run several days in advance of the upgrade to process any outstand 'major' compactions.  And then run at intervals leading up to the upgrade, to reduce the time it takes for the pre-upgrade processing time when the upgrade is started.
-        
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_details.sql`
+        ```
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_details.sql
+        ```
         
     - [Acid Tables Location](./acid_table_location_status.sql)
-        
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_location_status.sql`
+        ```
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_location_status.sql
+        ```
             
     - [Table Migration Check](./table_migration_check.sql)
         > This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' tables will be migrated to the new warehouse directory for Hive3.
-        
-        
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f table_migration_check.sql`
-        
+        ```
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f table_migration_check.sql
+        ```
 
         ```        
         ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
@@ -140,15 +150,16 @@ export OUTPUT_DIR=/tmp
         
     - [Acid Table Conversions](./acid_table_conversions.sql)
         > This script provides a bit more detail then [Table Migration Check](./table_migration_check.sql), which only looks for tables in the standard location.
-        
-        
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_conversions.sql`
+        ```        
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_conversions.sql
+        ```
         
     - [Missing HDFS Directories Check](./missing_table_dirs.sql)
         > The beeline output can be captured and pushed into the 'HadoopCli' for processing.  The following command will generate a script that can also be run with '-f' option in 'HadoopCli' to create the missing directories.
         > Even though we push this through hadoopcli for the hdfs test function, this will take some time to run.  If you want to see the progress, open another window session and tail the 'hcli_mkdir.txt' file.
-        
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f missing_table_dirs.sql`
+        ```
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f missing_table_dirs.sql
+        ```
         
         ```
         ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
@@ -164,8 +175,9 @@ export OUTPUT_DIR=/tmp
         > The 'alter' statements used to create a transactional table require a specific file pattern for existing files.  Files that don't match this, will cause issues with the upgrade.
         >> NOTE: The current test is for *.c000 ONLY.  The sql needs to be adjusted to match a different regex.
         > Get a list of table directories to check and run that through the 'Hadoop Cli' below to locate the odd files.
-        
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f table_dirs_for_conversion.sql`
+        ```
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f table_dirs_for_conversion.sql
+        ```
         
         ```
         ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \

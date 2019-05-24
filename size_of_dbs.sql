@@ -10,8 +10,9 @@ WITH HMS AS (
             )
 SELECT
     hms.db_name
-  , SUM(num_of_folders) AS total_fldr_count
-  , SUM(num_of_files)   AS total_file_count
+  , count(DISTINCT tbl_name) tbl_count
+  , SUM(num_of_folders) AS fldr_count
+  , SUM(num_of_files)   AS file_count
   , SUM(size)           AS total_size
 FROM
     HMS hms LEFT JOIN dir_size_${ENV} ds
