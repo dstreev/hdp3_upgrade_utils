@@ -72,7 +72,8 @@ export OUTPUT_DIR=/tmp
        
         ```
         export FIND_SERDE=<serde>
-        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --hivevar SERDE=${FIND_SERDE} -f serde_tables.sql
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+        --hivevar SERDE=${FIND_SERDE} -f serde_tables.sql
         ```
        
     - [Check Partition Location](./check_partition_location.sql)
@@ -97,7 +98,8 @@ export OUTPUT_DIR=/tmp
         ```
         > Copy the above file to HDFS
         ```
-        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/external_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
+        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/external_table_stats.txt \
+        ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
         ```
     - [Managed Table Locations](./managed_table_location.sql)
         > Determine the overall size/count of the tables locations
@@ -116,7 +118,8 @@ export OUTPUT_DIR=/tmp
         ```
         > Copy the above file to HDFS
         ```
-        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
+        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt \
+        ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
         ```
     - For LARGE Hive Installations, build an alter Migration Script
         > The Migration Script MUST run against EVERY DB. These migration scripts MUST be completed BEFORE users are allowed back on the cluster.  This process is intended to allow the 'parallel' running of the core 'HiveStrictManagedMigration' process when upgrade to Hive 3. Default processing through Ambari of this script is NOT threaded and therefore can take a very long time in environments with a lot of metadata.
@@ -146,13 +149,15 @@ export OUTPUT_DIR=/tmp
         
     - [Acid Tables Location](./acid_table_location_status.sql)
         ```
-        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_location_status.sql
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+        -f acid_table_location_status.sql
         ```
             
     - [Table Migration Check](./table_migration_check.sql)
         > This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' tables will be migrated to the new warehouse directory for Hive3.
         ```
-        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f table_migration_check.sql
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+        -f table_migration_check.sql
         ```
 
         ```        
