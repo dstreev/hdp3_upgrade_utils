@@ -43,14 +43,14 @@ export OUTPUT_DIR=/tmp
 
     ```
     ./hms_sqoop_dump.sh --target-hdfs-dir \
-    /warehouse/tablespace/external/hive/<target_db>.db/hms_dump_<env> \
+    ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/hms_dump_${DUMP_ENV} \
     --jdbc-db-url jdbc:mysql://<host:port>/<db_name> \
     --jdbc-user <user> --jdbc-password <password>
     ```
     > The 'target-hdfs-dir' is where you'll define the 'external' table for this dataset.  The location should coincide with the standard external dataset location.
 - Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
     ```
-    ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f hms_dump_ddl.sql
+    ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --hivevar EXTERNAL_WAREHOUSE_DIR=${EXTERNAL_WAREHOUSE_DIR} -f hms_dump_ddl.sql
     ```
 - Validate the dataset is visible via 'beeline'.
     ```
@@ -70,7 +70,10 @@ export OUTPUT_DIR=/tmp
        
     - [Find table with Serde x](./serde_tables.sql)
        
-        `${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --hivevar SERDE=<serde> -f serde_tables.sql`
+        ```
+        export FIND_SERDE=<serde>
+        ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --hivevar SERDE=${FIND_SERDE} -f serde_tables.sql
+        ```
        
     - [Check Partition Location](./check_partition_location.sql)
         > Many assumptions are made about partition locations.  When these location aren't standard, it may have an effect on other migration processes and calculations.  This script will help identify that impact.
@@ -94,7 +97,7 @@ export OUTPUT_DIR=/tmp
         ```
         > Copy the above file to HDFS
         ```
-        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/external_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}
+        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/external_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
         ```
     - [Managed Table Locations](./managed_table_location.sql)
         > Determine the overall size/count of the tables locations
@@ -113,7 +116,7 @@ export OUTPUT_DIR=/tmp
         ```
         > Copy the above file to HDFS
         ```
-        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}
+        hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
         ```
     - For LARGE Hive Installations, build an alter Migration Script
         > The Migration Script MUST run against EVERY DB. These migration scripts MUST be completed BEFORE users are allowed back on the cluster.  This process is intended to allow the 'parallel' running of the core 'HiveStrictManagedMigration' process when upgrade to Hive 3. Default processing through Ambari of this script is NOT threaded and therefore can take a very long time in environments with a lot of metadata.
