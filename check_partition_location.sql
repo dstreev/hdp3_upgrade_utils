@@ -17,7 +17,7 @@ WITH sub AS (
             WHERE
                 part_name IS NOT NULL
             )
-SELECT
+SELECT DISTINCT
     db_name
   , tbl_name
   , tbl_location

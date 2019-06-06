@@ -14,7 +14,7 @@
 --         ENV - IE: dev,qa,prod.  Used to support multiple
 --                 environment dump files in the same database.
 
-CREATE DATABASE IF NOT EXISTS ${DB} LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db';
+CREATE DATABASE IF NOT EXISTS ${DB};
 
 USE ${DB};
 
@@ -42,9 +42,15 @@ CREATE EXTERNAL TABLE hms_dump_${ENV} (
     PART_LOCATION      STRING,
     PART_NUM_BUCKETS   STRING,
     PART_SERDE_SLIB    STRING
-) ROW FORMAT DELIMITED NULL DEFINED AS '\002' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/hms_dump_${ENV}';
+) ROW FORMAT DELIMITED NULL DEFINED AS '\002' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/hms_dump_${ENV}'
+TBLPROPERTIES (
+    "external.table.purge"="true"
+    );
 
 DROP TABLE dir_size_${ENV};
 CREATE EXTERNAL TABLE dir_size_${ENV} (
     num_of_folders INT, num_of_files INT, size BIGINT, directory STRING
-) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}';
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}'
+    TBLPROPERTIES (
+        "external.table.purge"="true"
+        );

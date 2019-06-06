@@ -8,6 +8,16 @@ These scripts don't make any direct changes to hive, rather they are intended to
 
 We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](https://github.com/dstreev/hadoop-cli) to combine information from an extract of the Metastore DB and the contents of HDFS.
 
+## Assumptions
+
+1. This process is run from a HDP Edge node that has the HDFS Client, HDFS Configs and Hive(Beeline) Client installed.
+2. The Hadoop CLI (described below) has been installed.
+3. A Kerberos Ticket (for Kerberized environments) has been retrieved before running these processes.
+4. The authenticated user has "at least" read privileges to ALL 'hive table' and 'hdfs'. Suggest running as the 'hive' user.
+5. To issue changes to 'hdfs', the user should have super user privileges to the target directories in hdfs.  Suggest running as the 'hive' user.
+6. Ranger permissions have been created for 'hive' that allow it access as described in the two previous steps.
+
+
 ## Calling Hive
 
 We use Hive throughout this process.  The process has been validated against Hive3, using Beeline against LLAP.  To use against LLAP in HDP 2.6, you'll need to build a 'beeline' wrapper to connect automatically.  The output of 'beeline' will be a little different then the output of 'hive cli'.  So I recommend using 'beeline' in HDP 2.6 for this process since the pipeline has particular dependencies.
@@ -21,6 +31,8 @@ We use Hive throughout this process.  The process has been validated against Hiv
 #### Script vars
 
 > Set the following environment variable to assist with these scripts
+> I suggest using a 'new' database to avoid issues with location overrides.
+> The 'DUMP_ENV' var is intended to be something like: 'dev','qa','test','prod'.  This way you can run several tests and discoveries in a lower environment by extracting data from upper environments.
 ```
 export TARGET_DB=<target_db>
 export DUMP_ENV=<dump_env>
