@@ -59,5 +59,4 @@ SELECT
 FROM
     sub
 WHERE
-    conversion != "NO"
-ORDER BY db_name, tbl_name;
+    conversion != "NO";
