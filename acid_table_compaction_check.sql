@@ -27,5 +27,6 @@ WITH directories AS (
 SELECT *, SIZE(SPLIT(LOCATION,"/"))
 FROM
     directories
+where db_name = 'streaming_cc'
 ORDER BY LOCATION, length(LOCATION);
 
