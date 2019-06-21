@@ -24,8 +24,16 @@ WITH directories AS (
                           TBL_PARAM_KEY = 'transactional'
                       AND TBL_PARAM_VALUE = 'true'
                     )
-SELECT *
+SELECT
+    --     COUNT(1)
+    CONCAT("ALTER TABLE ", DB_NAME, ".", TBL_NAME, CASE
+                                                       WHEN PART_NAME IS NOT NULL
+                                                           THEN CONCAT(" PARTITION (", part_name, ")")
+                                                       ELSE ""
+                                                   END, " COMPACT 'major';") AS SQL
 FROM
-    directories
-ORDER BY LOCATION, length(LOCATION);
+    directories d INNER JOIN paths_${ENV} p
+                             ON d.LOCATION = p.path
+WHERE
+    p.section = "managed_deltas";
 

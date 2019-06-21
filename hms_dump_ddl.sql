@@ -42,15 +42,19 @@ CREATE EXTERNAL TABLE hms_dump_${ENV} (
     PART_LOCATION      STRING,
     PART_NUM_BUCKETS   STRING,
     PART_SERDE_SLIB    STRING
-) ROW FORMAT DELIMITED NULL DEFINED AS '\002' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/hms_dump_${ENV}'
-TBLPROPERTIES (
-    "external.table.purge"="true"
-    );
+) ROW FORMAT DELIMITED NULL DEFINED AS '\002' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/hms_dump_${ENV}' TBLPROPERTIES ( "external.table.purge" = "true" );
 
 DROP TABLE dir_size_${ENV};
 CREATE EXTERNAL TABLE dir_size_${ENV} (
     num_of_folders INT, num_of_files INT, size BIGINT, directory STRING
-) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}'
-    TBLPROPERTIES (
-        "external.table.purge"="true"
-        );
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}' TBLPROPERTIES ( "external.table.purge" = "true" );
+
+DROP TABLE paths_${ENV};
+CREATE EXTERNAL TABLE paths_${ENV} (
+    path STRING
+) PARTITIONED BY (section STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/paths_${ENV}' TBLPROPERTIES ( "external.table.purge" = "true" );
+
+-- Add static partition to store managed table directories where we found delta records
+ALTER TABLE paths_${ENV}
+    ADD PARTITION (section = "managed_deltas");
+
