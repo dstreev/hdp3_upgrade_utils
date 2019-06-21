@@ -26,6 +26,10 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
 1. Before the upgrade starts, make a snapshot of all your affect Hive Managed table locations.  The upgrade will convert and move things.  This is a last resort fallback process to get to your raw 'before' upgrade data.
     - Take this snapshot AFTER the 'MAJOR' compactions have completed.
 
+## Summary
+
+![](high_level_workflow.png)
+
 ## Calling Hive
 
 We use Hive throughout this process.  The process has been validated against Hive3, using Beeline against LLAP.  To use against LLAP in HDP 2.6, you'll need to build a 'beeline' wrapper to connect automatically.  The output of 'beeline' will be a little different then the output of 'hive cli'.  So I recommend using 'beeline' in HDP 2.6 for this process since the pipeline has particular dependencies.
@@ -61,7 +65,7 @@ export OUTPUT_DIR=/tmp
 
 ## The Process
 
-### Collecting the Metadata into a consumable format
+### Collect the Metadata
 
 Run the [sqoop dump utility](./hms_sqoop_dump.sh) to extract a dataset from the Metastore Database.  Sqoop will drop the dataset on HDFS.
 
@@ -76,7 +80,7 @@ ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/hms_dump_${DUMP_ENV} \
 
 The 'target-hdfs-dir' is where you'll define the 'external' table for this dataset.  The location should coincide with the standard external dataset location.
     
-### Build the Supporting Tables in Hive
+### Build Supporting Tables
 Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
 
 ```
@@ -211,6 +215,64 @@ Review the output file 'hcli_mkdir.txt', edit if necessary and process through '
 ```
 hadoopcli -r hcli_mkdir.txt
 ```
+
+### What might be moving in the Post-Migration Script
+
+The post migration process runs a hive process call 'HiveStrictManagedMigration'.  This process will scan the databases and tables in the Metastore and determine what needs to be converted and moved to adhere to the new standards in Hive 3. 
+            
+#### Table Migration Check
+
+[SQL](./table_migration_check.sql)
+
+This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' tables will be migrated to the new warehouse directory for Hive3.
+    
+```
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+-f table_migration_check.sql
+```
+
+```        
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+--showHeader=false --outputformat=tsv2 -f table_migration_check.sql | \
+cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissions_long,path \2/" | \
+hadoopcli -stdin -s > ${OUTPUT_DIR}/migration_check.txt
+```
+    
+#### Acid Table Conversions
+
+[SQL](./acid_table_conversions.sql)
+
+This script provides a bit more detail then [Table Migration Check](./table_migration_check.sql), which only looks for tables in the standard location.
+
+```        
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_conversions.sql
+```
+    
+#### Conversion Table Directories 
+
+[SQL](./table_dirs_for_conversion.sql)
+
+Locate Files that will prevent tables from Converting to ACID.
+
+The 'alter' statements used to create a transactional table require a specific file pattern for existing files.  Files that don't match this, will cause issues with the upgrade.
+    
+> NOTE: The current test is for *.c000 ONLY.  The sql needs to be adjusted to match a different regex.
+    
+Get a list of table directories to check and run that through the 'Hadoop Cli' below to locate the odd files.
+
+```
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f table_dirs_for_conversion.sql
+```
+    
+```
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+--showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
+sed -r "s/(^.*)/lsp -R -F <pattern> \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt         
+```
+
+Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
+
+> `lsp -R -F .*.c000 <path>` will recurse the path looking for files with a 'c000' extension.
         
 ### Managed / ACID Table Compactions
 
@@ -271,64 +333,6 @@ I recommend splitting the output script above into 1000-2000 line scripts that y
 TODO: Details on Tuning the Hive Compactor.
 
 Once completed, I would run the whole process again to check for any missed tables.  When the list is emtpy, you've covered them all.
-
-### What might be moving in the Post-Migration Script
-
-The post migration process runs a hive process call 'HiveStrictManagedMigration'.  This process will scan the databases and tables in the Metastore and determine what needs to be converted and moved to adhere to the new standards in Hive 3. 
-            
-#### Table Migration Check
-
-[SQL](./table_migration_check.sql)
-
-This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' tables will be migrated to the new warehouse directory for Hive3.
-    
-```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
--f table_migration_check.sql
-```
-
-```        
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2 -f table_migration_check.sql | \
-cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissions_long,path \2/" | \
-hadoopcli -stdin -s > ${OUTPUT_DIR}/migration_check.txt
-```
-    
-#### Acid Table Conversions
-
-[SQL](./acid_table_conversions.sql)
-
-This script provides a bit more detail then [Table Migration Check](./table_migration_check.sql), which only looks for tables in the standard location.
-
-```        
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_conversions.sql
-```
-    
-#### Conversion Table Directories 
-
-[SQL](./table_dirs_for_conversion.sql)
-
-Locate Files that will prevent tables from Converting to ACID.
-
-The 'alter' statements used to create a transactional table require a specific file pattern for existing files.  Files that don't match this, will cause issues with the upgrade.
-    
-> NOTE: The current test is for *.c000 ONLY.  The sql needs to be adjusted to match a different regex.
-    
-Get a list of table directories to check and run that through the 'Hadoop Cli' below to locate the odd files.
-
-```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f table_dirs_for_conversion.sql
-```
-    
-```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
-sed -r "s/(^.*)/lsp -R -F <pattern> \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt         
-```
-
-Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
-
-> `lsp -R -F .*.c000 <path>` will recurse the path looking for files with a 'c000' extension.
     
 ### TODO: Post Upgrade / BEFORE Using Hive 3 (****WIP****)
 
@@ -378,7 +382,49 @@ The output will be a list of databases with the following:
 
 > TODO: Modify Upgrade Process to Skip/Shortcut migration script.
 
-> TODO: Build out replace Migration Script with information gathered in this process.
+> TODO: Build out replace Migration Script with information gathered in this process.  Need to review Ambari parameters to ensure we are converting as needed by HDP.
+
+##### Reference For HiveStrict
+
+```
+hive --service strictmanagedmigration --help
+
+usage: org.apache.hadoop.hive.ql.util.HiveStrictManagedMigration
+ -d,--dbRegex <arg>                         Regular expression to match
+                                            database names on which this
+                                            tool will be run
+    --dryRun                                Show what migration actions
+                                            would be taken without
+                                            actually running commands
+ -h,--help                                  print help message
+    --hiveconf <property=value>             Use value for given property
+ -m,--migrationOption <arg>                 Table migration option
+                                            (automatic|external|managed|va
+                                            lidate|none)
+    --modifyManagedTables                   This setting enables the
+                                            shouldModifyManagedTableLocati
+                                            on,
+                                            shouldModifyManagedTableOwner,
+                                            shouldModifyManagedTablePermis
+                                            sions options
+    --oldWarehouseRoot <arg>                Location of the previous
+                                            warehouse root
+    --shouldModifyManagedTableLocation      Whether managed tables should
+                                            have their data moved from the
+                                            old warehouse path to the
+                                            current warehouse path
+    --shouldModifyManagedTableOwner         Whether managed tables should
+                                            have their directory owners
+                                            changed to the hive user
+    --shouldModifyManagedTablePermissions   Whether managed tables should
+                                            have their directory
+                                            permissions changed to conform
+                                            to strict managed tables mode
+ -t,--tableRegex <arg>                      Regular expression to match
+                                            table names on which this tool
+                                            will be run
+
+```
 
         
 ## Hadoop CLI
