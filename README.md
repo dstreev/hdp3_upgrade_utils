@@ -215,7 +215,7 @@ Build a list of ACID tables/partitions that we need to scan for delta's.  If the
 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=false \ 
- --outputformat=tsv2 - f acid_table_compaction_check.sql
+--outputformat=tsv2 - f acid_table_compaction_check.sql
 ```
     
 Now process the same query and feed it through the HadoopCli to inspect HDFS. This process will scan each of the listed directories and search for _delta_ ACID contents.  The resulting output will contain all the folders that have such entries.  These are the directories of tables/partitions that need to be 'MAJOR' COMPACTed.
@@ -231,7 +231,7 @@ Copy those results to HDFS, into an HDFS directory create in the [Setup SQL Scri
     
 ```
 hdfs dfs -copyFromLocal -f ${OUTPUT_DIR}/delta_tbls-parts_paths.txt \
- ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/paths_${DUMP_ENV}/section=managed_deltas/
+${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/paths_${DUMP_ENV}/section=managed_deltas/
 ```
     
 #### [ACID Table Compaction Required](./acid_table_compaction_reqs.sql)
@@ -322,10 +322,10 @@ For LARGE Hive Installations, build an alter Migration Script
 The Migration Script MUST run against EVERY DB. These migration scripts MUST be completed BEFORE users are allowed back on the cluster.  This process is intended to allow the 'parallel' running of the core 'HiveStrictManagedMigration' process when upgrade to Hive 3. Default processing through Ambari of this script is NOT threaded and therefore can take a very long time in environments with a lot of metadata.
 
 With the data collected from 'External/Managed Table Locations', we can run the following and get table and db sizes.
-
+ 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
-        --showHeader=false --outputformat=tsv2 -f size_of_dbs.sql > ${OUTPUT_DIR}/dbs_sizes.txt
+--showHeader=false --outputformat=tsv2 -f size_of_dbs.sql > ${OUTPUT_DIR}/dbs_sizes.txt
 ```
 
 The output will be a list of databases with the following:
