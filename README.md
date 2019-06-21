@@ -101,7 +101,9 @@ select * from hms_dump_${ENV} limit 10;
 ### Start Researching the Extract
 Review each of the following scripts. Each script contains a description of it's function.
     
-#### [Distinct Serdes](./distinct_serdes.sql)
+#### Distinct Serdes
+
+[SQL](./distinct_serdes.sql)
 
 Old serde's in the system will prevent the post-migration scripts from completing.  Find those missing serde's and either ensure they're available to Hive OR drop the old tables.
        
@@ -109,7 +111,9 @@ Old serde's in the system will prevent the post-migration scripts from completin
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f distinct_serdes.sql
 ```
        
-#### [Find table with Serde x](./serde_tables.sql)
+#### Find table with Serde x 
+
+[SQL](./serde_tables.sql)
 
 Once you found a suspect serde from above, use this query to located the tables that use it.
        
@@ -121,7 +125,9 @@ Once you found a suspect serde from above, use this query to located the tables 
        
 ### Are you following Best Practices?
 
-#### [Check Partition Location](./check_partition_location.sql)
+#### Check Partition Location
+
+[SQL](./check_partition_location.sql)
 
 Many assumptions are made about partition locations.  When these location aren't standard, it may have an effect on other migration processes and calculations.  This script will help identify that impact.
         
@@ -129,7 +135,9 @@ Many assumptions are made about partition locations.  When these location aren't
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f check_partition_location.sql
 ```
                 
-#### [Non-Managed Table Locations](./external_table_location.sql)
+#### Non-Managed Table Locations
+
+[SQL](./external_table_location.sql)
 
 Determine the overall size/count of the tables locations
         
@@ -153,7 +161,9 @@ hdfs dfs -copyFromLocal ${OUTPUT_DIR}/external_table_stats.txt \
 ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
 ```
 
-#### [Managed Table Locations](./managed_table_location.sql)
+#### Managed Table Locations
+
+[SQL](./managed_table_location.sql)
 
 Determine the overall size/count of the tables locations
     
@@ -177,7 +187,9 @@ hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt \
 ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
 ```
         
-#### [Missing HDFS Directories Check](./missing_table_dirs.sql)
+#### Missing HDFS Directories Check
+
+[SQL](./missing_table_dirs.sql)
 
 The beeline output can be captured and pushed into the 'HadoopCli' for processing.  The following command will generate a script that can also be run with '-f' option in 'HadoopCli' to create the missing directories.
  
@@ -210,7 +222,9 @@ So, this process is designed to allow you to skip that step.  How?  Well, we nee
 
 >NOTE: These tables need to go through a 'MAJOR' compaction and consolidate away all of the 'delta' transactions BEFORE upgrading.  'delta' datasets in a table that are NOT compacted away BEFORE the upgrade will NOT be readable AFTER the upgrade.
 
-#### [Acid Table Compaction Check](./acid_table_compaction_check.sql)
+#### Acid Table Compaction Check
+
+[SQL](./acid_table_compaction_check.sql)
 
 Build a list of ACID tables/partitions that we need to scan for delta's.  If they have delta's, they MUST be COMPACT 'MAJOR' before upgrading.
 
@@ -235,7 +249,9 @@ hdfs dfs -copyFromLocal -f ${OUTPUT_DIR}/delta_tbls-parts_paths.txt \
 ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/paths_${DUMP_ENV}/section=managed_deltas/
 ```
     
-#### [ACID Table Compaction Required](./acid_table_compaction_reqs.sql)
+#### Acid Table Compaction Required
+
+[SQL](./acid_table_compaction_reqs.sql)
 
 Using the scan from above, we join it back to the ACID table listing and generate a COMPACT script that we can run against the cluster.
      
@@ -260,7 +276,9 @@ Once completed, I would run the whole process again to check for any missed tabl
 
 The post migration process runs a hive process call 'HiveStrictManagedMigration'.  This process will scan the databases and tables in the Metastore and determine what needs to be converted and moved to adhere to the new standards in Hive 3. 
             
-#### [Table Migration Check](./table_migration_check.sql)
+#### Table Migration Check
+
+[SQL](./table_migration_check.sql)
 
 This will produce a list of tables and directories that need their ownership checked.  If they are owned by 'hive', these 'managed' tables will be migrated to the new warehouse directory for Hive3.
     
@@ -276,7 +294,9 @@ cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissio
 hadoopcli -stdin -s > ${OUTPUT_DIR}/migration_check.txt
 ```
     
-#### [Acid Table Conversions](./acid_table_conversions.sql)
+#### Acid Table Conversions
+
+[SQL](./acid_table_conversions.sql)
 
 This script provides a bit more detail then [Table Migration Check](./table_migration_check.sql), which only looks for tables in the standard location.
 
@@ -284,7 +304,10 @@ This script provides a bit more detail then [Table Migration Check](./table_migr
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_conversions.sql
 ```
     
-#### [Conversion Table Directories](./table_dirs_for_conversion.sql)
+#### Conversion Table Directories 
+
+[SQL](./table_dirs_for_conversion.sql)
+
 Locate Files that will prevent tables from Converting to ACID.
 
 The 'alter' statements used to create a transactional table require a specific file pattern for existing files.  Files that don't match this, will cause issues with the upgrade.
@@ -309,7 +332,9 @@ Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https
     
 ### TODO: Post Upgrade / BEFORE Using Hive 3 (****WIP****)
 
-#### [Acid Tables Location](./acid_table_location_status.sql)
+#### Acid Table Locations
+
+[SQL](./acid_table_location_status.sql)
 
 Only tables in standard locations will be "moved" by the post-migration process.  Use this to understand that impact.
 
@@ -320,10 +345,24 @@ ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 
 For LARGE Hive Installations, build an alter Migration Script
 
-The Migration Script MUST run against EVERY DB. These migration scripts MUST be completed BEFORE users are allowed back on the cluster.  This process is intended to allow the 'parallel' running of the core 'HiveStrictManagedMigration' process when upgrade to Hive 3. Default processing through Ambari of this script is NOT threaded and therefore can take a very long time in environments with a lot of metadata.
+The Migration Script MUST run against EVERY DB that contains tables the are 'managed'. These migration scripts MUST be completed BEFORE users are allowed back on the cluster.  This process is intended to allow the 'parallel' running of the core 'HiveStrictManagedMigration' process when upgrade to Hive 3. Default processing through Ambari of this script is NOT threaded and therefore can take a very long time in environments with a lot of metadata.
+
+```
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+-f post_migration_dbs.sql
+```
+
+Build a script to call the post migration script 'HiveStrictManagedMigration' process for each database independently. 
+
+TODO: Show script...  
+
+This process will replace what Ambari does in the post upgrade process.  
+
+TODO: We'll need to modify Ambari to skip this step.
 
 With the data collected from 'External/Managed Table Locations', we can run the following and get table and db sizes.
- 
+
+NOTE: This section depends on the output from [Non-Managed Table Locations](#non-managed-table-locations) and [Managed Table Locations](#managed-table-locations) 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 --showHeader=false --outputformat=tsv2 -f size_of_dbs.sql > ${OUTPUT_DIR}/dbs_sizes.txt
