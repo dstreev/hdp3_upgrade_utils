@@ -80,7 +80,8 @@ The 'target-hdfs-dir' is where you'll define the 'external' table for this datas
 Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
 
 ```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --hivevar EXTERNAL_WAREHOUSE_DIR=${EXTERNAL_WAREHOUSE_DIR} -f hms_dump_ddl.sql
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+--hivevar EXTERNAL_WAREHOUSE_DIR=${EXTERNAL_WAREHOUSE_DIR} -f hms_dump_ddl.sql
 ```
 
 Validate the dataset is visible via 'beeline'.
@@ -166,7 +167,7 @@ ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 --showHeader=false --outputformat=tsv2 -f managed_table_location.sql | \
 cut -f 3 | sed -r "s/(^.*)/count \1/" | \
 hadoopcli -stdin -s | sed -r "s/[ ]{2,}/\t/g" | sed -r "s/\s\//\t\//g" | \
-sed -r "s/^\t//g" > ${OUTPUT_DIR}/managed_table_stats.txt  
+sed -r "s/^\t//g" > ${OUTPUT_DIR}/managed_table_stats.txt
 ```
 
 Copy the above file to HDFS
@@ -214,7 +215,7 @@ So, this process is designed to allow you to skip that step.  How?  Well, we nee
 Build a list of ACID tables/partitions that we need to scan for delta's.  If they have delta's, they MUST be COMPACT 'MAJOR' before upgrading.
 
 ```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=false \ 
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=false \
 --outputformat=tsv2 - f acid_table_compaction_check.sql
 ```
     
