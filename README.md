@@ -216,7 +216,7 @@ Build a list of ACID tables/partitions that we need to scan for delta's.  If the
 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=false \
---outputformat=tsv2 - f acid_table_compaction_check.sql
+--outputformat=tsv2 -f acid_table_compaction_check.sql
 ```
     
 Now process the same query and feed it through the HadoopCli to inspect HDFS. This process will scan each of the listed directories and search for _delta_ ACID contents.  The resulting output will contain all the folders that have such entries.  These are the directories of tables/partitions that need to be 'MAJOR' COMPACTed.
