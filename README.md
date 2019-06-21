@@ -241,7 +241,7 @@ Using the scan from above, we join it back to the ACID table listing and generat
      
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=false \
---outputformat=tsv2 -f acid_table_compaction_check.sql > ${OUTPUT_DIR}/compact_major.sql 
+--outputformat=tsv2 -f acid_table_compaction_reqs.sql > ${OUTPUT_DIR}/compact_major.sql 
 ```
 
 This produced 'compact_major.sql' file may be large, containing 1000's of compact actions depending on how many ACID tables you have in your environment.

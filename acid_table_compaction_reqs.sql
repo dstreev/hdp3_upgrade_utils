@@ -30,7 +30,7 @@ SELECT
                                                        WHEN PART_NAME IS NOT NULL
                                                            THEN CONCAT(" PARTITION (", part_name, ")")
                                                        ELSE ""
-                                                   END, " COMPACT 'major';") AS SQL
+                                                   END, " COMPACT 'MAJOR';") AS SQL
 FROM
     directories d INNER JOIN paths_${ENV} p
                              ON d.LOCATION = p.path
