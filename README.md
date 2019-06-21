@@ -243,6 +243,18 @@ ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=f
 --outputformat=tsv2 -f acid_table_compaction_check.sql > ${OUTPUT_DIR}/compact_major.sql 
 ```
 
+This produced 'compact_major.sql' file may be large, containing 1000's of compact actions depending on how many ACID tables you have in your environment.
+
+To handle the load of running these compactions, you will need to tune the compactor appropriately for the load.
+
+The tuning process will depend on how many yarn resources you have to spare in the environment. The compactor can be tuned to run these jobs in a specific queue so you can isolate the workload.  Increasing the number of threads used by the compactor will control how many compaction jobs run at a time.  The size of the queue will determine the overall volume of work the process can handle.
+
+I recommend splitting the output script above into 1000-2000 line scripts that you can launch and monitor, before continuing on to the next.
+
+TODO: Details on Tuning the Hive Compactor.
+
+Once completed, I would run the whole process again to check for any missed tables.  When the list is emtpy, you've covered them all.
+
 ### What might be moving in the Post-Migration Script
 
 The post migration process runs a hive process call 'HiveStrictManagedMigration'.  This process will scan the databases and tables in the Metastore and determine what needs to be converted and moved to adhere to the new standards in Hive 3. 
