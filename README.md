@@ -30,14 +30,14 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
 
 We use Hive throughout this process.  The process has been validated against Hive3, using Beeline against LLAP.  To use against LLAP in HDP 2.6, you'll need to build a 'beeline' wrapper to connect automatically.  The output of 'beeline' will be a little different then the output of 'hive cli'.  So I recommend using 'beeline' in HDP 2.6 for this process since the pipeline has particular dependencies.
 
-### Environment variables for this process
+## Environment variables for this process
 
-#### Hive
+### Hive
 
 - HDP 3 - `export HIVE_ALIAS="hive -c llap"`
 - HDP 2.6 - `export HIVE_ALIAS="beeline -u ${jdbc_url_to_hive}"`
 
-#### Script vars
+### Script vars
 
 Set the following environment variable to assist with these scripts
 
