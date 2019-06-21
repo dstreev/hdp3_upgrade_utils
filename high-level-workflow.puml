@@ -1,0 +1,59 @@
+@startuml
+
+actor "Admin" as admin
+control "Sqoop" as sqoop
+database "Metastore DB" as metastore
+collections "HDFS" as hdfs
+boundary "Hive SQL" as script
+database "Hive" as hive
+entity "Hive Table" as table
+entity "Ambari" as ambari
+
+== Pre Upgrade Planning Setup ==
+admin -> sqoop: Run "Collect the Metadata"
+sqoop -> metastore: Extracts from
+sqoop -> hdfs: Saves to
+admin -> hive: Run "Build Supporting Tables"
+
+== Pre Upgrade Planning ==
+admin -> script: Run "Distinct Serdes"
+admin -> table: Fix Tables with Serde Issues
+admin -> script: Run "Check Partition Location"
+admin -> script: Run "Non-Managed Table Locations"
+admin -> script: Run "Managed Table Locations"
+admin -> script: Run "Missing HDFS Directories Check"
+admin -> script: Correct "Missing Directories"
+admin -> script: Run "Table Migration Check"
+admin -> script: Run "Acid Table Conversions"
+admin -> script: Run "Conversion Table Directories"
+
+== Pre Upgrade Compaction ==
+admin -> script: Run "Acid Table Compaction Check"
+note left
+    This process should be run several days
+    BEFORE the actual upgrade to reduce the downtime
+    of the upgrade.
+
+    And should be run just BEFORE the upgrade and
+    AFTER all users have been cleared from the system
+    to ensure no tables are modified after this runs.
+end note
+admin -> script: Run "Acid Table Compaction Required"
+admin -> hive: TUNE THE COMPACTOR for estimated compaction needs
+admin -> script: Run the compaction script.  Break it apart if needed.
+== Post Upgrade Planning ==
+admin -> script: Run "Acid Table Locations".  Save artifact for Upgrade.
+
+== Upgrade ==
+admin -> admin: Review and Run ALL previous steps\nand collect details.
+admin -> admin: Decision to intervene with Ambari Process\nbased on volumes indicated through research
+
+admin -> ambari: Hack Pre/Post Processes
+admin -> admin: Run Compaction Routine one last time.
+admin -> ambari: Start Upgrade
+admin -> admin: Run the Post Upgrade Planning Output to convert tables.
+admin -> ambari: Complete Upgrade
+
+
+
+@enduml
