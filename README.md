@@ -340,6 +340,18 @@ I recommend splitting the output script above into 1000-2000 line scripts that y
 TODO: Details on Tuning the Hive Compactor.
 
 Once completed, I would run the whole process again to check for any missed tables.  When the list is emtpy, you've covered them all.
+
+### WIP - Pre Upgrade Tool Run via the Upgrade
+
+During the cluster upgrade, Ambari will run a process called the "PreUpgrade" Tool as described in the [Ambari Major Upgrade - Preparing Hive for Upgrade](https://docs.hortonworks.com/HDPDocuments/Ambari-2.7.3.0/bk_ambari-upgrade-major/content/prepare_hive_for_upgrade.html).  All the work we've done to this point was designed to replace that process through a more targeted inspection.
+
+By running the above `compact_major.sql` before the upgrade, we can avoid running this pre-upgrade process driven by Ambari.  We'll need to hack at Ambari (before you start the HDP upgrade) to turn this script off.
+
+#### Target Script on Ambari-Server
+
+TODO: Describe how to disable during upgrade process.
+
+/var/lib/ambari-server/resources/common-services/HIVE/0.12.0.2.0/package/scripts/pre-upgrade.py 
     
 ### Post Upgrade / BEFORE Using Hive 3
 
