@@ -14,8 +14,11 @@ fi
 while read line; do
     POST_DB=`echo ${line} | cut -f 1 -d " "`
     echo "Launching Post Migration for: ${POST_DB}"
-    nohup ${HIVE_CMD} -Dhive.log.dir=${OUTPUT_DIR} -Dhive.log.file=post_migration_output_${POST_DB}.log \
-    --config /etc/hive/conf --service strictmanagedmigration --hiveconf hive.strict.managed.tables=true  \
-    -m automatic  --dbRegex ${POST_DB} ${DO_DRYRUN} \
-    --modifyManagedTables --oldWarehouseRoot /apps/hive/warehouse &
+	RUN_CMD="${HIVE_CMD} \
+	--config /etc/hive/conf --service strictmanagedmigration \
+    --hiveconf hive.strict.managed.tables=true  \
+    -m automatic --dbRegex ${POST_DB} --tableRegex .* ${DO_DRYRUN} \
+    --modifyManagedTables --oldWarehouseRoot /apps/hive/warehouse"
+	echo "Running: ${RUN_CMD}"
+	nohup ${RUN_CMD} &
 done < ${OUTPUT_DIR}/post_migration.txt
