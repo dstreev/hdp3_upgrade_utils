@@ -394,8 +394,6 @@ On the Ambari Server, find: `/var/lib/ambari-server/resources/stacks/HDP/3.0/ser
 ```{hive_script} --config /etc/hive/conf --service  strictmanagedmigration --hiveconf hive.strict.managed.tables=true  -m automatic  --modifyManagedTables --oldWarehouseRoot /apps/hive/warehouse"
 ```
 
-
-
 ##### Reference For HiveStrict Command
 
 ```
@@ -457,51 +455,6 @@ The output will be a list of databases with the following:
 - folder_count
 - file_count
 - total_size
-
-
-
-##### Reference For HiveStrict Command
-
-```
-hive --service strictmanagedmigration --help
-
-usage: org.apache.hadoop.hive.ql.util.HiveStrictManagedMigration
- -d,--dbRegex <arg>                         Regular expression to match
-                                            database names on which this
-                                            tool will be run
-    --dryRun                                Show what migration actions
-                                            would be taken without
-                                            actually running commands
- -h,--help                                  print help message
-    --hiveconf <property=value>             Use value for given property
- -m,--migrationOption <arg>                 Table migration option
-                                            (automatic|external|managed|va
-                                            lidate|none)
-    --modifyManagedTables                   This setting enables the
-                                            shouldModifyManagedTableLocati
-                                            on,
-                                            shouldModifyManagedTableOwner,
-                                            shouldModifyManagedTablePermis
-                                            sions options
-    --oldWarehouseRoot <arg>                Location of the previous
-                                            warehouse root
-    --shouldModifyManagedTableLocation      Whether managed tables should
-                                            have their data moved from the
-                                            old warehouse path to the
-                                            current warehouse path
-    --shouldModifyManagedTableOwner         Whether managed tables should
-                                            have their directory owners
-                                            changed to the hive user
-    --shouldModifyManagedTablePermissions   Whether managed tables should
-                                            have their directory
-                                            permissions changed to conform
-                                            to strict managed tables mode
- -t,--tableRegex <arg>                      Regular expression to match
-                                            table names on which this tool
-                                            will be run
-
-```
-
         
 ## Hadoop CLI
 
