@@ -373,25 +373,9 @@ Build a script to call the post migration script 'HiveStrictManagedMigration' pr
 
 Note: There is a 'dryrun' option for this script.  I suggest running that on a single, smaller DB to evaluate that everything is configured correctly before launching against the entire stack.
 
-``` bash
-#!/usr/bin/env bash
+Review and run [Post Migration Hive Strict Managed Migration Launcher](./post_migration.sh) to run a migration process for each database, independently.  
 
-# To trigger dryrun, just add an argument when calling this script.
-DRYRUN=$1
-HIVE_CMD=hive
-
-if [ "${DRYRUN}x == "x" ]; then
-    DO_DRYRUN="--dryRun"
-else
-    DO_DRYRUN=""
-fi
-
-while read line; do
-    POST_DB=`echo ${line} | cut -f 1 -d " "`
-    echo "Launching  ${POST_DB}"
-    nohup ${HIVE_CMD} --config /etc/hive/conf --service  strictmanagedmigration --hiveconf hive.strict.managed.tables=true  -m automatic  --dbRegex ${POST_DB} ${DO_DRYRUN} --modifyManagedTables --oldWarehouseRoot /apps/hive/warehouse" >> ${OUTPUT_DIR}/post_migration_output_${POST_DB}.log &        
-done < ${OUTPUT_DIR}/post_migration.txt
-``` 
+>Watch the volume!!!  If you have many database, I recommend carving this process up to run a maximum of 10 databases at a time!! 
 
 #### Modify Upgrade Process to Skip/Shortcut migration script.
 
