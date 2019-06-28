@@ -375,6 +375,8 @@ Note: There is a 'dryrun' option for this script.  I suggest running that on a s
 
 Review and run [Post Migration Hive Strict Managed Migration Launcher](./post_migration.sh) to run a migration process for each database, independently.  
 
+TODO: Figure out how to log calls to tables, which is DEBUG.  Use this to estimate table processing times.
+
 >Watch the volume!!!  If you have many database, I recommend carving this process up to run a maximum of 10 databases at a time!! 
 
 #### Modify Upgrade Process to Skip/Shortcut migration script.
