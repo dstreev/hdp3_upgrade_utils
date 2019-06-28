@@ -18,7 +18,7 @@ WITH post_migration AS (
                        )
 SELECT
     db_name
-  , count(tbl_name) AS num_of_tables_partitions
+  , count(tbl_name) AS num_of_managed_table_parts
 FROM
     post_migration
 GROUP BY db_name

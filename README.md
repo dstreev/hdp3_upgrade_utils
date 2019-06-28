@@ -1,5 +1,8 @@
 # hdp3_upgrade_utils
 
+
+
+
 Upgrading from Hive 1/2 to Hive 3 requires several metastore AND data changes to be successful.
 
 This process and the associated scripts are meant to be used as a 'pre-upgrade' planning toolkit to make the upgrade smoother.
@@ -10,12 +13,16 @@ We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](
 
 ## Assumptions
 
-1. This process is run from a HDP Edge node that has the HDFS Client, HDFS Configs and Hive(Beeline) Client installed.
-2. The Hadoop CLI (described below) has been installed.
-3. A Kerberos Ticket (for Kerberized environments) has been retrieved before running these processes.
-4. The authenticated user has "at least" read privileges to ALL 'hive table' and 'hdfs'. Suggest running as the 'hive' user.
-5. To issue changes to 'hdfs', the user should have super user privileges to the target directories in hdfs.  Suggest running as the 'hive' user.
-6. Ranger permissions have been created for 'hive' that allow it access as described in the two previous steps.
+1. This process needs to run as a privilege user.  In this case, it should run as the 'hive' user to ensure all access is appropriate.
+2. If you are using Ranger (I hope so!!), and have given the 'hive' user access to parts of HDFS, make sure the user also has access to the 'new' warehouse directories that will be created by this process. Those include:
+    a. `/warehouse/tablespace/external/hive`
+    b. `/warehouse/tablespace/managed/hive`
+3. This process is run from a HDP Edge node that has the HDFS Client, HDFS Configs and Hive(Beeline) Client installed.
+4. The Hadoop CLI (described below) has been installed.
+5. A Kerberos Ticket (for Kerberized environments) has been retrieved before running these processes.
+6. The authenticated user has "at least" read privileges to ALL 'hive table' and 'hdfs'. Suggest running as the 'hive' user.
+7. To issue changes to 'hdfs', the user should have super user privileges to the target directories in hdfs.  Suggest running as the 'hive' user.
+8. Ranger permissions have been created for 'hive' that allow it access as described in the two previous steps.
 
 ## WARNINGS
 
@@ -334,13 +341,17 @@ TODO: Details on Tuning the Hive Compactor.
 
 Once completed, I would run the whole process again to check for any missed tables.  When the list is emtpy, you've covered them all.
     
-### TODO: Post Upgrade / BEFORE Using Hive 3 (****WIP****)
+### Post Upgrade / BEFORE Using Hive 3
 
 #### Acid Table Locations
 
 [SQL](./acid_table_location_status.sql)
 
-Only tables in standard locations will be "moved" by the post-migration process.  Use this to understand that impact.
+Only **managed** tables in standard locations will be "moved" by the post-migration process.  Use this to understand that impact.
+
+This script will identify all **managed** tables and indication if they **may** move, based on being in a **"Standard"** location.
+
+It will also indicate whether the table is **currently** transactional or **not**.
 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
@@ -353,18 +364,100 @@ The Migration Script MUST run against EVERY DB that contains tables the are 'man
 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
--f post_migration_dbs.sql
+--showHeader=false --outputformat=tsv2 -f post_migration_dbs.sql \
+> ${OUTPUT_DIR}/post_migration.txt
 ```
 
-Build a script to call the post migration script 'HiveStrictManagedMigration' process for each database independently. 
+Build a script to call the post migration script 'HiveStrictManagedMigration' process for each of the databases independently listed in the above output.
 
-TODO: Show script...  
 
-This process will replace what Ambari does in the post upgrade process.  
+Note: There is a 'dryrun' option for this script.  I suggest running that on a single, smaller DB to evaluate that everything is configured correctly before launching against the entire stack.
 
-TODO: We'll need to modify Ambari to skip this step.
+``` bash
+#!/usr/bin/env bash
+
+# To trigger dryrun, just add an argument when calling this script.
+DRYRUN=$1
+HIVE_CMD=hive
+
+if [ "${DRYRUN}x == "x" ]; then
+    DO_DRYRUN="--dryRun"
+else
+    DO_DRYRUN=""
+fi
+
+while read line; do
+    POST_DB=`echo ${line} | cut -f 1 -d " "`
+    echo "Launching  ${POST_DB}"
+    nohup ${HIVE_CMD} --config /etc/hive/conf --service  strictmanagedmigration --hiveconf hive.strict.managed.tables=true  -m automatic  --dbRegex ${POST_DB} ${DO_DRYRUN} --modifyManagedTables --oldWarehouseRoot /apps/hive/warehouse" >> ${OUTPUT_DIR}/post_migration_output_${POST_DB}.log &        
+done < ${OUTPUT_DIR}/post_migration.txt
+``` 
+
+#### Modify Upgrade Process to Skip/Shortcut migration script.
+
+WARNING: By doing this, you are taking on the **responsibility** of running this process against ALL appropriate databases and tables.
+
+On the Ambari Server, find: `/var/lib/ambari-server/resources/stacks/HDP/3.0/services/HIVE/package/scripts/post_upgrade.py`
+- Make a safe copy of the `/var/lib/ambari-server/resources/stacks/HDP/3.0` directory.
+- Edit: `/var/lib/ambari-server/resources/stacks/HDP/3.0/services/HIVE/package/scripts/post_upgrade.py`
+- Comment out line: `  HivePostUpgrade().execute()`
+- Add Line below that: `  print ('Manual Override, run strictmanagedmigration process separately.)`
+- Save file.
+
+##### Reference Call
+```{hive_script} --config /etc/hive/conf --service  strictmanagedmigration --hiveconf hive.strict.managed.tables=true  -m automatic  --modifyManagedTables --oldWarehouseRoot /apps/hive/warehouse"
+```
+
+
+
+##### Reference For HiveStrict Command
+
+```
+hive --service strictmanagedmigration --help
+
+usage: org.apache.hadoop.hive.ql.util.HiveStrictManagedMigration
+ -d,--dbRegex <arg>                         Regular expression to match
+                                            database names on which this
+                                            tool will be run
+    --dryRun                                Show what migration actions
+                                            would be taken without
+                                            actually running commands
+ -h,--help                                  print help message
+    --hiveconf <property=value>             Use value for given property
+ -m,--migrationOption <arg>                 Table migration option
+                                            (automatic|external|managed|va
+                                            lidate|none)
+    --modifyManagedTables                   This setting enables the
+                                            shouldModifyManagedTableLocati
+                                            on,
+                                            shouldModifyManagedTableOwner,
+                                            shouldModifyManagedTablePermis
+                                            sions options
+    --oldWarehouseRoot <arg>                Location of the previous
+                                            warehouse root
+    --shouldModifyManagedTableLocation      Whether managed tables should
+                                            have their data moved from the
+                                            old warehouse path to the
+                                            current warehouse path
+    --shouldModifyManagedTableOwner         Whether managed tables should
+                                            have their directory owners
+                                            changed to the hive user
+    --shouldModifyManagedTablePermissions   Whether managed tables should
+                                            have their directory
+                                            permissions changed to conform
+                                            to strict managed tables mode
+ -t,--tableRegex <arg>                      Regular expression to match
+                                            table names on which this tool
+                                            will be run
+
+```
+
+By shortcutting Ambari's version of this process, we need to build a list of **Db's** and Tables that need to run through the post migration process.  When know, we run the process manually, targeting only those areas that are important (hive tables that "NEED" to be reviewed), instead of processing the whole system, one at a time.  
 
 With the data collected from 'External/Managed Table Locations', we can run the following and get table and db sizes.
+
+TODO: Build script with DB contents and run.
+
 
 NOTE: This section depends on the output from [Non-Managed Table Locations](#non-managed-table-locations) and [Managed Table Locations](#managed-table-locations) 
 ```
@@ -373,18 +466,15 @@ ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 ```
 
 The output will be a list of databases with the following:
-
 - db_name
 - tbl_count
 - folder_count
 - file_count
 - total_size
 
-> TODO: Modify Upgrade Process to Skip/Shortcut migration script.
 
-> TODO: Build out replace Migration Script with information gathered in this process.  Need to review Ambari parameters to ensure we are converting as needed by HDP.
 
-##### Reference For HiveStrict
+##### Reference For HiveStrict Command
 
 ```
 hive --service strictmanagedmigration --help
