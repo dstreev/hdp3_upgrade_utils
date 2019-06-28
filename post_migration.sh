@@ -17,5 +17,6 @@ while read line; do
     nohup ${HIVE_CMD} --config /etc/hive/conf --service  \
     strictmanagedmigration --hiveconf hive.strict.managed.tables=true  \
     -m automatic  --dbRegex ${POST_DB} ${DO_DRYRUN} \
-    --modifyManagedTables --oldWarehouseRoot /apps/hive/warehouse >> ${OUTPUT_DIR}/post_migration_output_${POST_DB}.log &
+    --modifyManagedTables --oldWarehouseRoot /apps/hive/warehouse \
+    -Dhive.log.dir=${OUTPUT_DIR} -Dhive.log.file=post_migration_output_${POST_DB}.log &
 done < ${OUTPUT_DIR}/post_migration.txt
