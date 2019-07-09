@@ -197,6 +197,23 @@ Copy the above file to HDFS
 hdfs dfs -copyFromLocal ${OUTPUT_DIR}/managed_table_stats.txt \
 ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/dir_size_${DUMP_ENV}
 ```
+#### Overlapping Table Locations
+
+Tables sharing the same HDFS location can cause a lot of problems if one or (both/all) are managed.  The conversions could move the datasets and leave the remaining tables in a strange state.
+
+[Overlapping Table Locations](./overlapping_table_locations.sql)
+
+```
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+         --showHeader=false --outputformat=tsv2 -f overlapping_table_locations.sql
+```
+
+If you find entries in this output AND one of the tables is 'Managed', you should split that locations and/or manage these overlapping locations before the migration process.
+
+One solution would be to ensure the tables sharing the location are 'External' tables.
+
+If all the offending tables pointed in each line of the output are 'External' already, you should be ok.      
+      
         
 #### Missing HDFS Directories Check
 
@@ -255,26 +272,38 @@ This script provides a bit more detail then [Table Migration Check](./table_migr
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f acid_table_conversions.sql
 ```
     
-#### Conversion Table Directories 
+#### Conversion Table Directories - Bad Files that will prevent ACID conversion
 
 [SQL](./table_dirs_for_conversion.sql)
 
 Locate Files that will prevent tables from Converting to ACID.
 
 The 'alter' statements used to create a transactional table require a specific file pattern for existing files.  Files that don't match this, will cause issues with the upgrade.
-    
-> NOTE: The current test is for *.c000 ONLY.  The sql needs to be adjusted to match a different regex.
-    
+
+##### Acceptable Filename Patterns
+
+__Known__
+
+- ([0-9]+_[0-9]+)|([0-9]+_[0-9]_copy_[0-9]+)
+        
 Get a list of table directories to check and run that through the 'Hadoop Cli' below to locate the odd files.
 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f table_dirs_for_conversion.sql
 ```
+
+Using the directories from the [Table Directories for Conversion](./table_dirs_for_conversion.sql) script, we'll check each directory for possible offending file that may get in the way of converting them to an ACID table.
+
+The 'hadoopcli' function 'lsp' does an 'inverted' pattern search for all files that do NOT match the 'GOOD_PATTERN' declared below.
+
+NOTE: The inverted search functionality for 'lsp' in 'HadoopCli' is supported in version 2.0.14-SNAPSHOT and above.
     
 ```
+export GOOD_PATTERN="([0-9]+_[0-9]+)|([0-9]+_[0-9]_copy_[0-9]+)"
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 --showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
-sed -r "s/(^.*)/lsp -R -F <pattern> \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt         
+sed -r "s/(^.*)/lsp -R -F ${GOOD_PATTERN} -i \
+-Fe file -f parent,file \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt      
 ```
 
 Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
@@ -474,7 +503,7 @@ An interactive/scripted 'hdfs' client that can be scripted to reduce the time it
 
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
 
-Note: As of this writing, version [2.0.13-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.13-SNAPSHOT) (or later) and above is required for this effort.
+Note: As of this writing, version [2.0.14-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.14-SNAPSHOT) (or later) is required for this effort.
 
 Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder. Detailed directions [here](https://github.com/dstreev/hadoop-cli).
 
