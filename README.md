@@ -226,13 +226,15 @@ Even though we push this through hadoopcli for the hdfs test function, this will
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f missing_table_dirs.sql
 ```
-        
+
+Build a script to 'Create' the missing directories.        
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 --showHeader=false --outputformat=tsv2  -f missing_table_dirs.sql | \
 hadoopcli -stdin -s 2>&1 >/dev/null | cut -f 4 | \
 sed 's/^/mkdir -p /g' > ${OUTPUT_DIR}/hcli_mkdir.txt
 ```
+
 
 Review the output file 'hcli_mkdir.txt', edit if necessary and process through 'hadoopcli'.
 
@@ -303,7 +305,7 @@ export GOOD_PATTERN="([0-9]+_[0-9]+)|([0-9]+_[0-9]_copy_[0-9]+)"
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 --showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
 sed -r "s/(^.*)/lsp -R -F ${GOOD_PATTERN} -i \
--Fe file -f parent,file \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt      
+-Fe -v file -f parent,file \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt      
 ```
 
 Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
