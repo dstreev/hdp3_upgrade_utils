@@ -46,7 +46,8 @@ We use Hive throughout this process.  The process has been validated against Hiv
 ### Hive
 
 - HDP 3 - `export HIVE_ALIAS="hive -c llap"`
-- HDP 2.6 - `export HIVE_ALIAS="beeline -u ${jdbc_url_to_hive}"`
+- HDP 2.6 - `export HIVE_ALIAS=hive`
+NOTE: I attempted `beeline` in 2.6.5, but ran into variable passing issues with hivevar.
 
 ### Script vars
 
@@ -61,6 +62,10 @@ export TARGET_DB=<target_db>
 export DUMP_ENV=<dump_env>
 export OUTPUT_DIR=<base_output_dir>
 export EXTERNAL_WAREHOUSE_DIR=<ext_wh_dir>
+# Set this when using beeline
+export HIVE_OUTPUT_OPTS="--showHeader=false --outputformat=tsv2"
+# Set this when using hive
+export HIVE_OUTPUT_OPTS=
 
 # For Example:
 export TARGET_DB=mycompany
@@ -159,7 +164,7 @@ ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
     
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2 -f external_table_location.sql | \
+${HIVE_OUTPUT_OPTS} -f external_table_location.sql | \
 cut -f 3 | sed -r "s/(^.*)/count \1/" | \
 hadoopcli -stdin -s | sed -r "s/[ ]{2,}/\t/g" | sed -r "s/\s\//\t\//g" | \
 sed -r "s/^\t//g"> ${OUTPUT_DIR}/external_table_stats.txt  
@@ -185,7 +190,7 @@ ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
     
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2 -f managed_table_location.sql | \
+${HIVE_OUTPUT_OPTS} -f managed_table_location.sql | \
 cut -f 3 | sed -r "s/(^.*)/count \1/" | \
 hadoopcli -stdin -s | sed -r "s/[ ]{2,}/\t/g" | sed -r "s/\s\//\t\//g" | \
 sed -r "s/^\t//g" > ${OUTPUT_DIR}/managed_table_stats.txt
@@ -205,7 +210,7 @@ Tables sharing the same HDFS location can cause a lot of problems if one or (bot
 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
-         --showHeader=false --outputformat=tsv2 -f overlapping_table_locations.sql
+         ${HIVE_OUTPUT_OPTS} -f overlapping_table_locations.sql
 ```
 
 If you find entries in this output AND one of the tables is 'Managed', you should split that locations and/or manage these overlapping locations before the migration process.
@@ -230,7 +235,7 @@ ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f missing_tab
 Build a script to 'Create' the missing directories.        
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2  -f missing_table_dirs.sql | \
+${HIVE_OUTPUT_OPTS}  -f missing_table_dirs.sql | \
 hadoopcli -stdin -s 2>&1 >/dev/null | cut -f 4 | \
 sed 's/^/mkdir -p /g' > ${OUTPUT_DIR}/hcli_mkdir.txt
 ```
@@ -259,7 +264,7 @@ ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 
 ```        
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2 -f table_migration_check.sql | \
+${HIVE_OUTPUT_OPTS} -f table_migration_check.sql | \
 cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissions_long,path \2/" | \
 hadoopcli -stdin -s > ${OUTPUT_DIR}/migration_check.txt
 ```
@@ -303,7 +308,7 @@ NOTE: The inverted search functionality for 'lsp' in 'HadoopCli' is supported in
 ```
 export GOOD_PATTERN="([0-9]+_[0-9]+)|([0-9]+_[0-9]_copy_[0-9]+)"
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2  -f table_dirs_for_conversion.sql | \
+${HIVE_OUTPUT_OPTS} -f table_dirs_for_conversion.sql | \
 sed -r "s/(^.*)/lsp -R -F ${GOOD_PATTERN} -i \
 -Fe -v file -f parent,file \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt      
 ```
@@ -329,15 +334,15 @@ So, this process is designed to allow you to skip that step.  How?  Well, we nee
 Build a list of ACID tables/partitions that we need to scan for delta's.  If they have delta's, they MUST be COMPACT 'MAJOR' before upgrading.
 
 ```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=false \
---outputformat=tsv2 -f acid_table_compaction_check.sql
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+${HIVE_OUTPUT_OPTS} -f acid_table_compaction_check.sql
 ```
     
 Now process the same query and feed it through the HadoopCli to inspect HDFS. This process will scan each of the listed directories and search for _delta_ ACID contents.  The resulting output will contain all the folders that have such entries.  These are the directories of tables/partitions that need to be 'MAJOR' COMPACTed.
     
 ```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=false \
---outputformat=tsv2 -f acid_table_compaction_check.sql | \
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+${HIVE_OUTPUT_OPTS} -f acid_table_compaction_check.sql | \
 cut -f 4 | \sed -r "s/(^.*)/lsp -R -F .*delta_.* -t -sp -f path \1/" | \
 hadoopcli -stdin -s > ${OUTPUT_DIR}/delta_tbls-parts_paths.txt
 ```
@@ -356,8 +361,8 @@ ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/paths_${DUMP_ENV}/section=managed_delt
 Using the scan from above, we join it back to the ACID table listing and generate a COMPACT script that we can run against the cluster.
      
 ```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} --showHeader=false \
---outputformat=tsv2 -f acid_table_compaction_reqs.sql > ${OUTPUT_DIR}/compact_major.sql 
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
+${HIVE_OUTPUT_OPTS} -f acid_table_compaction_reqs.sql > ${OUTPUT_DIR}/compact_major.sql 
 ```
 
 This produced 'compact_major.sql' file may be large, containing 1000's of compact actions depending on how many ACID tables you have in your environment.
@@ -407,7 +412,7 @@ The Migration Script MUST run against EVERY DB that contains tables the are 'man
 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2 -f post_migration_dbs.sql \
+${HIVE_OUTPUT_OPTS} -f post_migration_dbs.sql \
 > ${OUTPUT_DIR}/post_migration.txt
 ```
 
@@ -489,7 +494,7 @@ TODO: Build script with DB contents and run.
 NOTE: This section depends on the output from [Non-Managed Table Locations](#non-managed-table-locations) and [Managed Table Locations](#managed-table-locations) 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---showHeader=false --outputformat=tsv2 -f size_of_dbs.sql > ${OUTPUT_DIR}/dbs_sizes.txt
+${HIVE_OUTPUT_OPTS} -f size_of_dbs.sql > ${OUTPUT_DIR}/dbs_sizes.txt
 ```
 
 The output will be a list of databases with the following:
