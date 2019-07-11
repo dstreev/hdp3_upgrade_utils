@@ -1,8 +1,5 @@
 # hdp3_upgrade_utils
 
-
-
-
 Upgrading from Hive 1/2 to Hive 3 requires several metastore AND data changes to be successful.
 
 This process and the associated scripts are meant to be used as a 'pre-upgrade' planning toolkit to make the upgrade smoother.
@@ -12,6 +9,12 @@ These scripts don't make any direct changes to hive, rather they are intended to
 We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](https://github.com/dstreev/hadoop-cli) to combine information from an extract of the Metastore DB and the contents of HDFS.
 
 ## Assumptions
+
+NOTES:
+
+ Date | Details |
+:-----|:-----|
+ 2019-07-11 | I found an issue in HadoopCli v2.0.13+ regarding output.  Please update to v.2.0.15+ |
 
 1. This process needs to run as a privilege user.  In this case, it should run as the 'hive' user to ensure all access is appropriate.
 2. If you are using Ranger (I hope so!!), and have given the 'hive' user access to parts of HDFS, make sure the user also has access to the 'new' warehouse directories that will be created by this process. Those include:
@@ -310,7 +313,7 @@ export GOOD_PATTERN="([0-9]+_[0-9]+)|([0-9]+_[0-9]_copy_[0-9]+)"
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 ${HIVE_OUTPUT_OPTS} -f table_dirs_for_conversion.sql | \
 sed -r "s/(^.*)/lsp -R -F ${GOOD_PATTERN} -i \
--Fe -v file -f parent,file \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt      
+-Fe file -v file -f parent,file \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt      
 ```
 
 Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
@@ -510,7 +513,7 @@ An interactive/scripted 'hdfs' client that can be scripted to reduce the time it
 
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
 
-Note: As of this writing, version [2.0.14-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.14-SNAPSHOT) (or later) is required for this effort.
+Note: As of this writing, version [2.0.15-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.15-SNAPSHOT) (or later) is required for this effort.
 
 Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder. Detailed directions [here](https://github.com/dstreev/hadoop-cli).
 
