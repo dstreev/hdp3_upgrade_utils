@@ -15,7 +15,8 @@ NOTES:
  Date | Details |
 :-----|:-----|
  2019-07-11 | I found an issue in HadoopCli v2.0.13+ regarding output.  Please update to v.2.0.15+ |
-
+ 2019-07-12 | Added docs to process static fsimage and updated reference to HadoopCli v2.0.16 |
+ 
 1. This process needs to run as a privilege user.  In this case, it should run as the 'hive' user to ensure all access is appropriate.
 2. If you are using Ranger (I hope so!!), and have given the 'hive' user access to parts of HDFS, make sure the user also has access to the 'new' warehouse directories that will be created by this process. Those include:
     a. `/warehouse/tablespace/external/hive`
@@ -69,6 +70,9 @@ export EXTERNAL_WAREHOUSE_DIR=<ext_wh_dir>
 export HIVE_OUTPUT_OPTS="--showHeader=false --outputformat=tsv2"
 # Set this when using hive
 export HIVE_OUTPUT_OPTS=
+# Support direct connection to Namenode via /etc/hadoop/conf configs
+export HC="hadoopcli"
+# Support webhdfs connection to oi
 
 # For Example:
 export TARGET_DB=mycompany
