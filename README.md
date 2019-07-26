@@ -166,7 +166,7 @@ Determine the overall size/count of the tables locations
         
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
-  --showHeader=false --outputformat=tsv2 -f external_table_location.sql
+  ${HIVE_OUTPUT_OPTS} -f external_table_location.sql
 ```
     
 ```
@@ -192,7 +192,7 @@ Determine the overall size/count of the tables locations
     
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
-         --showHeader=false --outputformat=tsv2 -f managed_table_location.sql
+         ${HIVE_OUTPUT_OPTS} -f managed_table_location.sql
 ```
     
 ```
@@ -317,7 +317,7 @@ export GOOD_PATTERN="([0-9]+_[0-9]+)|([0-9]+_[0-9]_copy_[0-9]+)"
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
 ${HIVE_OUTPUT_OPTS} -f table_dirs_for_conversion.sql | \
 sed -r "s/(^.*)/lsp -R -F ${GOOD_PATTERN} -i \
--Fe file -v file -f parent,file \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt      
+-Fe file -v -f parent,file \1/" | hadoopcli -stdin -s >> ${OUTPUT_DIR}/bad_file_patterns.txt      
 ```
 
 Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
@@ -517,7 +517,7 @@ An interactive/scripted 'hdfs' client that can be scripted to reduce the time it
 
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
 
-Note: As of this writing, version [2.0.15-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.15-SNAPSHOT) (or later) is required for this effort.
+Note: As of this writing, version [2.0.16-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.16-SNAPSHOT) (or later) is required for this effort.
 
 Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder. Detailed directions [here](https://github.com/dstreev/hadoop-cli).
 

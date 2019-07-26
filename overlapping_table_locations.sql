@@ -32,5 +32,4 @@ WHERE
 GROUP BY tbl_location
 HAVING
         SIZE(COLLECT_SET(
-                CONCAT(db_name, ".", tbl_name, "[Partition:", NVL(part_name, "DEFAULT"), "]", ":(", tbl_type, ")"))) >
-        1;
+                CONCAT(db_name, ".", tbl_name, "[Partition:", NVL(part_name, "DEFAULT"), "]", ":(", tbl_type, ")"))) > 1;
