@@ -30,7 +30,7 @@ NOTES:
 
 ## WARNINGS
 
-1. Some of the processes covered hear will examine the contents of HDFS via the Namenode.  The results could spike RPC Queues on clusters that aren't optimized.  I suggest monitoring NN RPC pressure when running large amounts of data through the Hadoop Cli.
+1. Some of the processes covered here will examine the contents of HDFS via the Namenode.  The results could spike RPC Queues on clusters that aren't optimized.  I suggest monitoring NN RPC pressure when running large amounts of data through the Hadoop Cli.
  
 ## Don't skip ME!!
 
