@@ -57,6 +57,6 @@ WITH sub AS (
 SELECT
     hdfs_path AS hcli_check
 FROM
-    sub;
+    sub
 WHERE
     conversion != "NO";
