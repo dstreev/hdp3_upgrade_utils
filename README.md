@@ -251,7 +251,7 @@ sed 's/^/mkdir -p /g' > ${OUTPUT_DIR}/hcli_mkdir.txt
 Review the output file 'hcli_mkdir.txt', edit if necessary and process through 'hadoopcli'.
 
 ```
-hadoopcli -r hcli_mkdir.txt
+hadoopcli -f hcli_mkdir.txt
 ```
 
 ### What might be moving in the Post-Migration Script
