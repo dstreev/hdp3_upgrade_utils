@@ -1,27 +1,50 @@
 # Required to run this process
 - import_playbook: hadoop-cli.yaml
+  when: github is defined
 
 - hosts: edge
   become: true
   become_user: '{{ hive_user }}'
 
   vars:
-    planning_version: '{{ target_version | default("1.0.1") }}'
+    planning_version: '{{ target_version | default("1.0.2") }}'
     hive_command: '{{ HIVE_ALIAS }} --hivevar DB={{ TARGET_DB }} --hivevar ENV={{ DUMP_ENV }} {{ HIVE_OUTPUT_OPTS }}'
     script_root: /home/{{ hive_user }}/hdp3_upgrade_utils-{{ planning_version }}
     
   tasks:
-    - name: Download Artifacts
+    - name:
+      fail:
+        msg: You need to specify one of two properties ('github' or 'local')
+      when: local is not defined and github is not defined
+      tags:
+        - source
+    - name: Download Artifacts from GitHub (version {{ planning_version }})
       get_url:
         url: https://github.com/dstreev/hdp3_upgrade_utils/archive/{{ planning_version }}.tar.gz
         dest: /home/{{ hive_user }}/planning.{{ planning_version }}.tgz
         force: no
+      when: github is defined
+      tags:
+        - source
+    - name: Check for utils_package variable
+      fail:
+        msg: Specify variable 'utils_package' to pull source from localhost
+      when: local is defined and utils_package is not defined
+      tags:
+        - source
+    - name: Push Artifacts from Local ({{ utils_package }})
+      file:
+        src: '{{ utils_package }}'
+        dest: /home/{{ hive_user }}/planning.{{ planning_version }}.tgz
+        force: yes
+      when: local is defined and utils_package is defined
       tags:
         - source
     - name: Remove old version
       file:
         path: /home/{{ hive_user }}/hdp3_upgrade_utils-{{ planning_version }}
         state: absent
+      when: github is defined
       tags:
         - source
     - name: Extract Download
@@ -29,8 +52,10 @@
         src: /home/{{ hive_user }}/planning.{{ planning_version }}.tgz
         dest: /home/{{ hive_user }}
         remote_src: yes
+      when: github is defined
       tags:
         - source
+
 
     - name: Pause for kinit of '{{ hive_user }}' user
       pause:

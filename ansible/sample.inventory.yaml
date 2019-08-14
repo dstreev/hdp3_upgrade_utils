@@ -1,22 +1,29 @@
 # Copy to 'inventory.yaml'
 
-edge:
-  hosts:
-    os03.streever.local
-  vars:
-    hive_alias: "hive -c llap"
-    target_db: "demo_planning"
-    dump_env: "demo"
-    output_dir: "/tmp"
-    # HDP 2
-#    external_warehouse_dir: "/apps/hive/warehouse"
-    # HDP 3
-    external_warehouse_dir: "/warehouse/tablespace/external/hive"
+all:
+  children:
+    edge:
+      vars:
+        target_version: ansible
+        hive_user: hive
+        HIVE_ALIAS: hive -c llap or hive in hdp2
+        TARGET_DB: <target hive db>
+        DUMP_ENV: <target dump environment for example-dev,qa,prod)>
+        OUTPUT_DIR: /tmp
+        # HDP 2
+        #    external_warehouse_dir: /apps/hive/warehouse
+        # HDP 3
+        EXTERNAL_WAREHOUSE_DIR: /warehouse/tablespace/external/hive
+        # For Beeline (hive in hdp 3)
+        HIVE_OUTPUT_OPTS: --showHeader=false --outputformat=tsv2
+        # For Hive CLI (hive 1/2)
+        #HIVE_OUTPUT_OPTS: ""
+        hadoopcli_cmd: /usr/local/bin/hadoopcli
 
-    # For Beeline (hive in hdp 3)
-    hive_output_opts: "--showHeader=false --outputformat=tsv"
-    # For Hive CLI (hive 1/2)
-    hive_output_opts: ""
+        # Include the db name in the url
+        hive_metastore_db_url: jdbc:mysql://<db_host:port>/<hms_db>
+        hive_metastore_db_user: <your db username>
+        hive_metastore_db_password: <your db password>
 
-    hadoopcli_cmd: "hadoopcli"
-    
+      hosts:
+        <your target host to run this process(edge node is good)>

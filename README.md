@@ -8,6 +8,10 @@ These scripts don't make any direct changes to hive, rather they are intended to
 
 We'll use a combination of Hive SQL and an interactive HDFS client [Hadoop-Cli](https://github.com/dstreev/hadoop-cli) to combine information from an extract of the Metastore DB and the contents of HDFS.
 
+## Disclaimer
+
+This process is supplied 'as-is' in good faith to help support the upgrade path to Hive 3.  It is NOT supported by Cloudera (nor Legacy Hortonworks) and results should be manually validated.  Consult Cloudera/Hortonworks official documentation for details regarding the data collected through this process.
+
 ## Assumptions
 
 NOTES:
@@ -16,13 +20,14 @@ NOTES:
 :-----|:-----|
  2019-07-11 | I found an issue in HadoopCli v2.0.13+ regarding output.  Please update to v.2.0.15+ |
  2019-07-12 | Added docs to process static fsimage and updated reference to HadoopCli v2.0.16 |
+ 2019-08-14 | Adding support to run process via [Ansible](https://www.ansible.com)
  
 1. This process needs to run as a privilege user.  In this case, it should run as the 'hive' user to ensure all access is appropriate.
 2. If you are using Ranger (I hope so!!), and have given the 'hive' user access to parts of HDFS, make sure the user also has access to the 'new' warehouse directories that will be created by this process. Those include:
     a. `/warehouse/tablespace/external/hive`
     b. `/warehouse/tablespace/managed/hive`
 3. This process is run from a HDP Edge node that has the HDFS Client, HDFS Configs and Hive(Beeline) Client installed.
-4. The Hadoop CLI (described below) has been installed.
+4. The Hadoop CLI (described below) has been installed. As of this writing, version [2.0.16-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.16-SNAPSHOT) (or later) is required for this effort.
 5. A Kerberos Ticket (for Kerberized environments) has been retrieved before running these processes.
 6. The authenticated user has "at least" read privileges to ALL 'hive table' and 'hdfs'. Suggest running as the 'hive' user.
 7. To issue changes to 'hdfs', the user should have super user privileges to the target directories in hdfs.  Suggest running as the 'hive' user.
@@ -44,6 +49,91 @@ NOTES:
 ## Calling Hive
 
 We use Hive throughout this process.  The process has been validated against Hive3, using Beeline against LLAP.  To use against LLAP in HDP 2.6, you'll need to build a 'beeline' wrapper to connect automatically.  The output of 'beeline' will be a little different then the output of 'hive cli'.  So I recommend using 'beeline' in HDP 2.6 for this process since the pipeline has particular dependencies.
+
+## Ansible Automation (wip)
+
+I've started working on an ansible script that can be used to run the 'necessary' parts of this process and produce output 'reports'.  Those output reports will be copied back to the local drive (from where ever your running ansible from).  The location is current set to `../../hdp3_hms_reports-{{ DUMP_ENV }}-{{ inventory_hostname }}/`.
+
+### A few pre-reqs for the ansible-playbook
+
+1. Ansible Install on source host
+2. SSH key access to target host
+3. User with key access has privileges to su over to {{ hive_user }}
+4. No access to github from the target server, see below.
+
+There is a [sample inventory](./ansible/sample.inventory.yaml) that you need to make a copy of and add your environment settings.  Assuming you've create `./ansible/inventory.yaml` from here on as a reference.
+
+The [ansible playbook](./ansible/upgrade_planning.yaml) runs the process on the target host (that what ansible does ;) ).  So that host needs to have the sources in this project to run. Two ways to get them there:
+
+### Getting Sources to the target host
+#### The host has access to https://github.com
+
+``` 
+cd ansible
+ansible-playbook -i inventory.yaml --extra-vars "github=true" upgrade_planning.yaml
+```
+
+#### The host does NOT have access to https://github.com
+First we need to create an archive locally of the project directory OR we can download a pre-packaged version from [github](https://github.com/dstreev/hdp3_upgrade_utils/releases) and Download the latest 'Source code (tar.gz)' file.
+
+We need to install the 'HadoopCli' on the target host first.  See [Assumptions](Assumptions) for minimum requirements.
+ 
+``` 
+cd ansible
+ansible-playbook -i inventory.yaml --extra-vars "local=true utils_package=/tmp/<change_me>.tar.gz" upgrade_planning.yaml
+```
+
+### Running Sections of the Playbook
+
+I've added tags to each of the tasks in the playbook to allow more control over the process.
+
+Tags:
+- hadoopcli "Installs Hadoop CLI"
+- source "Manages the sources"
+- load "Load the Metastore Data"
+- validate "Validates we've got our wires lined up"
+- report "Run the reports"
+- fetchreports "Fetch the reports"
+
+### Example calls using tags:
+#### Running just the 'load' processes
+```
+ansible-playbook -i inventory.yaml --tags "load" --extra-vars "github=true" upgrade_planning.yaml
+```
+
+#### Skip the 'source' process
+```
+ansible-playbook -i inventory.yaml --skip-tags "source" --extra-vars "github=true" upgrade_planning.yaml
+```
+
+### The Reports
+
+#### Questionable_Serde_Tables.cs
+See [Tables with Questionable Serdes](Tables with Questionable Serdes)
+
+#### Over_Lapping_Tables.csv
+See []()
+
+#### Missing_Directories.csv
+See []()
+
+#### Location_Migration_Check.csv
+See []()
+
+#### Format_Migration_Check.csv
+See []()
+
+#### Required_Major_Compactions.sql
+See []()
+
+
+### What's Left
+
+We don't actively change anything on the cluster.  The reports provide information you need to evaluate and take action with.
+
+This process does NOT yet run the [Acceptable Filename Patterns](Acceptable Filename Patterns) process.  You'll need to run that separately.
+
+This process does NOT current build the [post processing](Modify Upgrade Process to Skip Shortcut migration script) pieces.
 
 ## Environment variables for this process
 
@@ -516,8 +606,6 @@ The output will be a list of databases with the following:
 An interactive/scripted 'hdfs' client that can be scripted to reduce the time it takes to cycle through 'hdfs' commands.  
 
 [Hadoop CLI Project/Sources Github](https://github.com/dstreev/hadoop-cli)
-
-Note: As of this writing, version [2.0.16-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.16-SNAPSHOT) (or later) is required for this effort.
 
 Fetch the latest Binary Distro [here](https://github.com/dstreev/hadoop-cli/releases) . Unpack the hadoop.cli-x.x.x-SNAPSHOT-x.x.tar.gz and run (as root) the setup from the extracted folder. Detailed directions [here](https://github.com/dstreev/hadoop-cli).
 
