@@ -19,7 +19,7 @@ NOTES:
  Date | Details |
 :-----|:-----|
  2019-07-11 | I found an issue in HadoopCli v2.0.13+ regarding output.  Please update to v.2.0.15+ |
- 2019-07-12 | Added docs to process static fsimage and updated reference to HadoopCli v2.0.16 |
+ 2019-07-12 | Added docs to process static fsimage and updated reference to [HadoopCli][Hadoop CLI] v2.0.16 |
  2019-08-14 | Adding support to run process via [Ansible](https://www.ansible.com)
  
 1. This process needs to run as a privilege user.  In this case, it should run as the 'hive' user to ensure all access is appropriate.
@@ -27,7 +27,7 @@ NOTES:
     a. `/warehouse/tablespace/external/hive`
     b. `/warehouse/tablespace/managed/hive`
 3. This process is run from a HDP Edge node that has the HDFS Client, HDFS Configs and Hive(Beeline) Client installed.
-4. The Hadoop CLI (described below) has been installed. As of this writing, version [2.0.16-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.16-SNAPSHOT) (or later) is required for this effort.
+4. The [Hadoop CLI][Hadoop CLI] has been installed. As of this writing, version [2.0.16-SNAPSHOT](https://github.com/dstreev/hadoop-cli/releases/tag/2.0.16-SNAPSHOT) (or later) is required for this effort.
 5. A Kerberos Ticket (for Kerberized environments) has been retrieved before running these processes.
 6. The authenticated user has "at least" read privileges to ALL 'hive table' and 'hdfs'. Suggest running as the 'hive' user.
 7. To issue changes to 'hdfs', the user should have super user privileges to the target directories in hdfs.  Suggest running as the 'hive' user.
@@ -76,7 +76,7 @@ ansible-playbook -i inventory.yaml --extra-vars "github=true" upgrade_planning.y
 #### The host does NOT have access to https://github.com
 First we need to create an archive locally of the project directory OR we can download a pre-packaged version from [github](https://github.com/dstreev/hdp3_upgrade_utils/releases) and Download the latest 'Source code (tar.gz)' file.
 
-We need to install the 'HadoopCli' on the target host first.  See [Assumptions](Assumptions) for minimum requirements.
+We need to install the 'HadoopCli' on the target host first.  See [Assumptions][Assumptions] for minimum requirements.
  
 ``` 
 cd ansible
@@ -109,7 +109,7 @@ ansible-playbook -i inventory.yaml --skip-tags "source" --extra-vars "github=tru
 ### The Reports
 
 #### Questionable_Serde_Tables.cs
-See [Tables with Questionable Serdes](Tables with Questionable Serdes)
+See [Tables with Questionable Serdes][Tables with Questionable Serdes]
 
 #### Over_Lapping_Tables.csv
 See []()
