@@ -6,9 +6,9 @@
   become_user: '{{ hive_user }}'
 
   vars:
-    planning_version: '{{ target_version }} | default("1.0.1") }}
+    planning_version: '{{ target_version | default("1.0.1") }}'
     hive_command: '{{ HIVE_ALIAS }} --hivevar DB={{ TARGET_DB }} --hivevar ENV={{ DUMP_ENV }} {{ HIVE_OUTPUT_OPTS }}'
-    script_root: /home/{{ hive_user }}/hdp3_upgrade_utils-{{ planning_version}}
+    script_root: /home/{{ hive_user }}/hdp3_upgrade_utils-{{ planning_version }}
     
   tasks:
     - name: Download Artifacts
@@ -93,12 +93,12 @@
         - report
 
     - name: Stage 3 (Missing Table Directories)
-      shell: '{{ hive_command }} -f {{ script_root }}/missing_table_dirs.sql | hadoopcli -stdin -s 2>&1 >/dev/null | cut -f 4 | sed "s/^/mkdir -p /g" > {{ OUTPUT_DIR }}/Missing_Directories.csv'
+      shell: '{{ hive_command }} -f {{ script_root }}/missing_table_dirs.sql | {{ hadoopcli_cmd }} -stdin -s 2>&1 >/dev/null | cut -f 4 | sed "s/^/mkdir -p /g" > {{ OUTPUT_DIR }}/Missing_Directories.csv'
       tags:
         - report
 
     - name: Stage 4 (Manage Tables Format Migration Check)
-      shell: '{{ hive_command }} -f {{ script_root }}/table_migration_check.sql | cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissions_long,path \2/" | hadoopcli -stdin -s > {{ OUTPUT_DIR }}/Format_Migration_Check.csv'
+      shell: '{{ hive_command }} -f {{ script_root }}/table_migration_check.sql | cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissions_long,path \2/" | {{ hadoopcli_cmd }} -stdin -s > {{ OUTPUT_DIR }}/Format_Migration_Check.csv'
       tags:
         - report
 
@@ -108,14 +108,12 @@
         - report
 
     - name: Stage 6.1 (Acid Table Compaction Paths)
-      shell: '{{ hive_command }} -f {{ script_root }}/acid_table_compaction_check.sql | \
-             cut -f 4 | \sed -r "s/(^.*)/lsp -R -F .*delta_.* -t -sp -f path \1/" | \
-             hadoopcli -stdin -s > {{ OUTPUT_DIR }}/delta_tbls-parts_paths.txt'
+      shell: '{{ hive_command }} -f {{ script_root }}/acid_table_compaction_check.sql | cut -f 4 | \sed -r "s/(^.*)/lsp -R -F .*delta_.* -t -sp -f path \1/" | {{ hadoopcli_cmd }} -stdin -s > {{ OUTPUT_DIR }}/delta_tbls-parts_paths.txt'
       tags:
         - report
 
     - name: Stage 6.2. (Load Compaction Paths)
-      shell: 'hdfs dfs -copyFromLocal -f {{ OUTPUT_DIR }}}/delta_tbls-parts_paths.txt {{ EXTERNAL_WAREHOUSE_DIR }}/{{ TARGET_DB }}.db/paths_{{ DUMP_ENV }}/section=managed_deltas/'
+      shell: 'hdfs dfs -copyFromLocal -f {{ OUTPUT_DIR }}/delta_tbls-parts_paths.txt {{ EXTERNAL_WAREHOUSE_DIR }}/{{ TARGET_DB }}.db/paths_{{ DUMP_ENV }}/section=managed_deltas/'
       tags:
         - report
 
@@ -127,7 +125,8 @@
     - name: Fetch Reports
       fetch:
         src: '{{ OUTPUT_DIR }}/{{ item }}'
-        dest: '../hdp3_hms_reports-{{ inventory-hostname }}/'
+        dest: '../../hdp3_hms_reports-{{ DUMP_ENV }}-{{ inventory_hostname }}/'
+        flat: yes
         fail_on_missing: no
       loop:
         - Required_Major_Compactions.sql
