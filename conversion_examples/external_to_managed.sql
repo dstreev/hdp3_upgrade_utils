@@ -19,6 +19,8 @@ TBLPROPERTIES (
   'external.table.purge'='true'
 );
 
+-- Not a good practice approach for add records to Hive!!!
+-- For demo purposes ONLY.  Don't do this in production systems!!!
 insert into table test_init_ext (id, street) values ("1", "Hollywood");
 insert into table test_init_ext (id, street) values ("2", "Hollywood");
 

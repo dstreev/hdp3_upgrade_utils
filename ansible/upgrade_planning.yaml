@@ -1,0 +1,142 @@
+# Required to run this process
+- import_playbook: hadoop-cli.yaml
+
+- hosts: edge
+  become: true
+  become_user: '{{ hive_user }}'
+
+  vars:
+    planning_version: '{{ target_version }} | default("1.0.1") }}
+    hive_command: '{{ HIVE_ALIAS }} --hivevar DB={{ TARGET_DB }} --hivevar ENV={{ DUMP_ENV }} {{ HIVE_OUTPUT_OPTS }}'
+    script_root: /home/{{ hive_user }}/hdp3_upgrade_utils-{{ planning_version}}
+    
+  tasks:
+    - name: Download Artifacts
+      get_url:
+        url: https://github.com/dstreev/hdp3_upgrade_utils/archive/{{ planning_version }}.tar.gz
+        dest: /home/{{ hive_user }}/planning.{{ planning_version }}.tgz
+        force: no
+      tags:
+        - source
+    - name: Remove old version
+      file:
+        path: /home/{{ hive_user }}/hdp3_upgrade_utils-{{ planning_version }}
+        state: absent
+      tags:
+        - source
+    - name: Extract Download
+      unarchive:
+        src: /home/{{ hive_user }}/planning.{{ planning_version }}.tgz
+        dest: /home/{{ hive_user }}
+        remote_src: yes
+      tags:
+        - source
+
+    - name: Pause for kinit of '{{ hive_user }}' user
+      pause:
+        prompt: "If the system is Kerberized, you need to 'kinit' the target host before proceeding[enter to continue]"
+    - name: The {{ hive_user }} requires permissions to hdfs directories...
+      pause:
+        prompt: "The {{ hive_user }} requires permissions to hdfs directories... [enter to continue]"
+
+    - name: Drop previous table if they exists
+      shell: '{{ hive_command }} --hivevar EXTERNAL_WAREHOUSE_DIR={{ EXTERNAL_WAREHOUSE_DIR }} -f {{ script_root }}/hms_dump_drop.sql'
+      tags:
+        - load
+
+    - name: Test for previous dataset
+      shell: hdfs dfs -test -d {{ EXTERNAL_WAREHOUSE_DIR }}/{{ TARGET_DB }}.db/hms_dump_{{ DUMP_ENV }}
+      register: hdfs_dir_check
+      ignore_errors: true
+      tags:
+        - load
+    #    - name:   Check Variable
+    #      pause:
+    #        prompt: Directory check is {{ hdfs_dir_check['rc'] }}
+    #      tags:
+    #        - load
+    - name: Purge previous dataset
+      shell: hdfs dfs -rm -r -f {{ EXTERNAL_WAREHOUSE_DIR }}/{{ TARGET_DB }}.db/hms_dump_{{ DUMP_ENV }}
+      when: hdfs_dir_check['rc'] == 0
+      tags:
+        - load
+
+    - name: Load Data from Metastore DB with Sqoop
+      shell: '{{ script_root }}/hms_sqoop_dump.sh --target-hdfs-dir {{ EXTERNAL_WAREHOUSE_DIR }}/{{ TARGET_DB }}.db/hms_dump_{{ DUMP_ENV }} --jdbc-db-url {{ hive_metastore_db_url }} --jdbc-user {{ hive_metastore_db_user }} --jdbc-password {{ hive_metastore_db_password }}'
+      tags:
+        - load
+
+    - name: Create tables
+      shell: '{{ hive_command }} --hivevar EXTERNAL_WAREHOUSE_DIR={{ EXTERNAL_WAREHOUSE_DIR }} -f {{ script_root }}/hms_dump_create.sql'
+      tags:
+        - load
+
+    - name: Check Data alignment
+      shell: "{{ hive_command }} -e 'use ${DB}; select * from hms_dump_${ENV} limit 10;' 2>/dev/null"
+      register: sql_output
+      tags:
+        - validate
+    - name: Validate Data Alignment
+      pause:
+        prompt: Dataset Alignment Test {{ sql_output }}
+      tags:
+        - validate
+
+    - name: Stage 1 (Tables with Questionable Serdes)
+      shell: '{{ hive_command }} -f {{ script_root }}/questionable_serde_tables.sql 2>/dev/null > {{ OUTPUT_DIR }}/Questionable_Serde_Tables.csv'
+      tags:
+        - report
+
+    - name: Stage 2 (Overlapping Managed Tables)
+      shell: '{{ hive_command }} -f {{ script_root }}/overlapping_table_locations.sql 2>/dev/null > {{ OUTPUT_DIR }}/Over_Lapping_Tables.csv'
+      tags:
+        - report
+
+    - name: Stage 3 (Missing Table Directories)
+      shell: '{{ hive_command }} -f {{ script_root }}/missing_table_dirs.sql | hadoopcli -stdin -s 2>&1 >/dev/null | cut -f 4 | sed "s/^/mkdir -p /g" > {{ OUTPUT_DIR }}/Missing_Directories.csv'
+      tags:
+        - report
+
+    - name: Stage 4 (Manage Tables Format Migration Check)
+      shell: '{{ hive_command }} -f {{ script_root }}/table_migration_check.sql | cut -f 1,2,5,6 | sed -r "s/(^.*)(\/apps.*)/lsp -c \"\1\" -f user,group,permissions_long,path \2/" | hadoopcli -stdin -s > {{ OUTPUT_DIR }}/Format_Migration_Check.csv'
+      tags:
+        - report
+
+    - name: Stage 5 (Manage Table Location Migrations)
+      shell: '{{ hive_command }} -f {{ script_root }}/acid_table_conversions.sql > {{ OUTPUT_DIR }}/Location_Migration_Check.csv'
+      tags:
+        - report
+
+    - name: Stage 6.1 (Acid Table Compaction Paths)
+      shell: '{{ hive_command }} -f {{ script_root }}/acid_table_compaction_check.sql | \
+             cut -f 4 | \sed -r "s/(^.*)/lsp -R -F .*delta_.* -t -sp -f path \1/" | \
+             hadoopcli -stdin -s > {{ OUTPUT_DIR }}/delta_tbls-parts_paths.txt'
+      tags:
+        - report
+
+    - name: Stage 6.2. (Load Compaction Paths)
+      shell: 'hdfs dfs -copyFromLocal -f {{ OUTPUT_DIR }}}/delta_tbls-parts_paths.txt {{ EXTERNAL_WAREHOUSE_DIR }}/{{ TARGET_DB }}.db/paths_{{ DUMP_ENV }}/section=managed_deltas/'
+      tags:
+        - report
+
+    - name: Stage 6.3 (Required Major Compactions)
+      shell: '{{ hive_command }} -f {{ script_root }}/acid_table_compaction_reqs.sql > {{ OUTPUT_DIR }}/Required_Major_Compactions.sql'
+      tags:
+        - report
+
+    - name: Fetch Reports
+      fetch:
+        src: '{{ OUTPUT_DIR }}/{{ item }}'
+        dest: '../hdp3_hms_reports-{{ inventory-hostname }}/'
+        fail_on_missing: no
+      loop:
+        - Required_Major_Compactions.sql
+        - Location_Migration_Check.csv
+        - Format_Migration_Check.csv
+        - Missing_Directories.csv
+        - Over_Lapping_Tables.csv
+        - Questionable_Serde_Tables.cs
+      tags:
+        - fetchreports
+
+

@@ -1,0 +1,22 @@
+# Copy to 'inventory.yaml'
+
+edge:
+  hosts:
+    os03.streever.local
+  vars:
+    hive_alias: "hive -c llap"
+    target_db: "demo_planning"
+    dump_env: "demo"
+    output_dir: "/tmp"
+    # HDP 2
+#    external_warehouse_dir: "/apps/hive/warehouse"
+    # HDP 3
+    external_warehouse_dir: "/warehouse/tablespace/external/hive"
+
+    # For Beeline (hive in hdp 3)
+    hive_output_opts: "--showHeader=false --outputformat=tsv"
+    # For Hive CLI (hive 1/2)
+    hive_output_opts: ""
+
+    hadoopcli_cmd: "hadoopcli"
+    

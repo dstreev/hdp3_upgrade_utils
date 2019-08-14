@@ -18,9 +18,7 @@ CREATE DATABASE IF NOT EXISTS ${DB};
 
 USE ${DB};
 
-DROP TABLE hms_dump_${ENV};
-
-CREATE EXTERNAL TABLE hms_dump_${ENV} (
+CREATE EXTERNAL TABLE IF NOT EXISTS hms_dump_${ENV} (
     DB_NAME            STRING,
     DB_DEFAULT_LOC     STRING,
     DB_OWNER           STRING,
@@ -44,17 +42,33 @@ CREATE EXTERNAL TABLE hms_dump_${ENV} (
     PART_SERDE_SLIB    STRING
 ) ROW FORMAT DELIMITED NULL DEFINED AS '\002' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/hms_dump_${ENV}' TBLPROPERTIES ( "external.table.purge" = "true" );
 
-DROP TABLE dir_size_${ENV};
-CREATE EXTERNAL TABLE dir_size_${ENV} (
+CREATE EXTERNAL TABLE IF NOT EXISTS dir_size_${ENV} (
     num_of_folders INT, num_of_files INT, size BIGINT, directory STRING
 ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/dir_size_${ENV}' TBLPROPERTIES ( "external.table.purge" = "true" );
 
-DROP TABLE paths_${ENV};
-CREATE EXTERNAL TABLE paths_${ENV} (
+CREATE EXTERNAL TABLE IF NOT EXISTS paths_${ENV} (
     path STRING
 ) PARTITIONED BY (section STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' STORED AS TEXTFILE LOCATION '${EXTERNAL_WAREHOUSE_DIR}/${DB}.db/paths_${ENV}' TBLPROPERTIES ( "external.table.purge" = "true" );
 
 -- Add static partition to store managed table directories where we found delta records
 ALTER TABLE paths_${ENV}
-    ADD PARTITION (section = "managed_deltas");
+    ADD IF NOT EXISTS PARTITION (section = "managed_deltas");
 
+CREATE TABLE IF NOT EXISTS known_serdes_${ENV} (
+    SERDE_NAME STRING
+);
+
+INSERT INTO TABLE
+    known_serdes_${ENV} (SERDE_NAME)
+VALUES ("org.apache.hadoop.hive.ql.io.orc.OrcSerde")
+     , ("org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe")
+     , ("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe")
+     , ("org.apache.hadoop.hive.hbase.HBaseSerDe")
+     , ("org.apache.hive.storage.jdbc.JdbcSerDe")
+     , ("org.apache.hadoop.hive.druid.DruidStorageHandler")
+     , ("org.apache.phoenix.hive.PhoenixStorageHandler")
+     , ("org.apache.hadoop.hive.serde2.avro.AvroSerDe")
+     , ("org.apache.hadoop.hive.serde2.RegexSerDe")
+     , ("parquet.hive.serde.ParquetHiveSerDe")
+     , ("org.apache.hadoop.hive.serde2.OpenCSVSerde")
+     , ("org.apache.hive.hcatalog.data.JsonSerDe");

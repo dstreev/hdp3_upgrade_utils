@@ -14,9 +14,13 @@
 USE ${DB};
 
 -- Distinct List of Serdes
-
 SELECT DISTINCT
-    tbl_serde_slib
-  , part_serde_slib
+    serde
 FROM
-    hms_dump_${ENV};
+    (
+    SELECT DISTINCT tbl_serde_slib AS SERDE
+    FROM hms_dump_${ENV}
+    UNION ALL
+    SELECT part_serde_slib AS SERDE
+    FROM hms_dump_${ENV}
+    ) AS sub;

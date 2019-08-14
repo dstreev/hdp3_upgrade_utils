@@ -100,11 +100,11 @@ ${EXTERNAL_WAREHOUSE_DIR}/${TARGET_DB}.db/hms_dump_${DUMP_ENV} \
 The 'target-hdfs-dir' is where you'll define the 'external' table for this dataset.  The location should coincide with the standard external dataset location.
     
 ### Build Supporting Tables
-Run the [Hive HMS Schema Creation Script](./hms_dump_ddl.sql) to create the external table onto of the location you placed the sqoop extract.
+Run the [Hive HMS Schema Creation Script](hms_dump_create.sql) to create the external table onto of the location you placed the sqoop extract.
 
 ```
 ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
---hivevar EXTERNAL_WAREHOUSE_DIR=${EXTERNAL_WAREHOUSE_DIR} -f hms_dump_ddl.sql
+--hivevar EXTERNAL_WAREHOUSE_DIR=${EXTERNAL_WAREHOUSE_DIR} -f hms_dump_create.sql
 ```
 
 Validate the dataset is visible via 'beeline'.
@@ -123,27 +123,27 @@ select * from hms_dump_${ENV} limit 10;
 
 ### Start Researching the Extract
 Review each of the following scripts. Each script contains a description of it's function.
-    
-#### Distinct Serdes
 
-[SQL](./distinct_serdes.sql)
+#### Tables with Questionable Serdes
+
+[SQL](./questionable_serde_tables.sql)
 
 Old serde's in the system will prevent the post-migration scripts from completing.  Find those missing serde's and either ensure they're available to Hive OR drop the old tables.
-       
-```
-${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f distinct_serdes.sql
-```
-       
-#### Find table with Serde x 
 
-[SQL](./serde_tables.sql)
+This process relies on a list of standard Serde's we've built up in the database.  Check the table `known_serdes_${ENV}`. If you want to add to the table, use a hive insert command.  This table is populated when we create the tables for this effort in [CREATE](./hms_dump_create.sql).  If you find we've missed a 'serde', please log a github issue and I'll adjust the create script to include it for future checks.
 
-Once you found a suspect serde from above, use this query to located the tables that use it.
-       
+```$sql
+use ${DB};
+
+INSERT INTO TABLE
+    known_serdes_${ENV} (SERDE_NAME)
+VALUES ("your-custom-serde-class");
 ```
-  export FIND_SERDE=<serde>
-  ${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} \
-  --hivevar SERDE=${FIND_SERDE} -f serde_tables.sql
+
+Find Questionable Tables with:
+
+```
+${HIVE_ALIAS} --hivevar DB=${TARGET_DB} --hivevar ENV=${DUMP_ENV} -f questionable_serde_tables.sql
 ```
        
 ### Are you following Best Practices?
@@ -354,7 +354,7 @@ cut -f 4 | \sed -r "s/(^.*)/lsp -R -F .*delta_.* -t -sp -f path \1/" | \
 hadoopcli -stdin -s > ${OUTPUT_DIR}/delta_tbls-parts_paths.txt
 ```
     
-Copy those results to HDFS, into an HDFS directory create in the [Setup SQL Script](./hms_dump_ddl.sql) for the 'paths_${ENV}' table in the 'section=managed_deltas' partition.
+Copy those results to HDFS, into an HDFS directory create in the [Setup SQL Script](hms_dump_create.sql) for the 'paths_${ENV}' table in the 'section=managed_deltas' partition.
     
 ```
 hdfs dfs -copyFromLocal -f ${OUTPUT_DIR}/delta_tbls-parts_paths.txt \

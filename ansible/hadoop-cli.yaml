@@ -1,0 +1,31 @@
+- hosts: edge
+  become: true
+
+  vars:
+    hadoop_cli_version: 2.0.16-SNAPSHOT
+
+  tasks:
+    - name: Fetch HadoopCLI Binaries
+      get_url:
+        url:        https://github.com/dstreev/hadoop-cli/releases/download/{{ hadoop_cli_version }}/hadoop.cli-{{ hadoop_cli_version }}-3.1.tar.gz
+        dest:       "/tmp/hadoopcli.{{ hadoop_cli_version }}.tar.gz"
+        force:      yes
+      tags:
+        - hadoopcli
+    - name: Remove Old References
+      file:
+        path: "/tmp/hadoop-cli-3.1"
+        state: absent
+      tags:
+        - hadoopcli
+    - name:         Unpack HadoopCLI Binaries
+      unarchive:
+        src:        "/tmp/hadoopcli.{{ hadoop_cli_version }}.tar.gz"
+        dest:       "/tmp"
+        remote_src: yes
+      tags:
+        - hadoopcli
+    - name:         Install HadoopCLI
+      shell: /tmp/hadoop-cli-3.1/setup.sh
+      tags:
+        - hadoopcli
