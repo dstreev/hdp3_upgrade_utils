@@ -19,7 +19,7 @@ NOTES:
  Date | Details |
 :-----|:-----|
  2019-07-11 | I found an issue in HadoopCli v2.0.13+ regarding output.  Please update to v.2.0.15+ |
- 2019-07-12 | Added docs to process static fsimage and updated reference to [HadoopCli][Hadoop CLI] v2.0.16 |
+ 2019-07-12 | Added docs to process static fsimage and updated reference to [HadoopCli](#hadoop-cli) v2.0.16 |
  2019-08-14 | Adding support to run process via [Ansible](https://www.ansible.com)
  
 1. This process needs to run as a privilege user.  In this case, it should run as the 'hive' user to ensure all access is appropriate.
