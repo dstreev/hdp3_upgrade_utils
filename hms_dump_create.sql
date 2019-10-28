@@ -55,11 +55,11 @@ ALTER TABLE paths_${ENV}
     ADD IF NOT EXISTS PARTITION (section = "managed_deltas");
 
 CREATE TABLE IF NOT EXISTS known_serdes_${ENV} (
-    SERDE_NAME STRING
+    serde_name STRING
 );
 
 INSERT INTO TABLE
-    known_serdes_${ENV} (SERDE_NAME)
+    known_serdes_${ENV} (serde_name)
 VALUES ("org.apache.hadoop.hive.ql.io.orc.OrcSerde")
      , ("org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe")
      , ("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe")
