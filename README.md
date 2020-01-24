@@ -388,7 +388,7 @@ The 'alter' statements used to create a transactional table require a specific f
 
 __Known__
 
-- ([0-9]+_[0-9]+)|([0-9]+_[0-9]_copy_[0-9]+)
+- ([0-9]+_[0-9]+)|([0-9]+_[0-9]\_copy\_[0-9]+)
         
 Get a list of table directories to check and run that through the 'Hadoop Cli' below to locate the odd files.
 
@@ -413,6 +413,28 @@ sed -r "s/(^.*)/lsp -R -F ${GOOD_PATTERN} -i \
 Figure out which pattern to use through testing with 'lsp' in [Hadoop Cli](https://github.com/dstreev/hadoop-cli)
 
 > `lsp -R -F .*.c000 <path>` will recurse the path looking for files with a 'c000' extension.
+
+Traditionally 'managed non-acid' or 'external' tables CAN NOT be converted to ACID tables as long as there are files present that have 'bad' filenames, as shown above.
+
+To fix these filename in bulk, use Hive SQL to rewrite the table/parition files AND ensure whatever process that's writing the ill-formed filename, stops!
+
+```sql
+INSERT OVERWRITE TABLE mytable PARTITION (partcol1[=val1], partcol2[=val2] ...) SELECT * FROM mytable [WHERE partcol1 = val1 [ AND partcol2=val2 ]];
+```
+
+Now the table is ready to be converted to ACID.
+
+### Converting a table to ACID
+
+When you find a table that's "managed non-acid" in Hive 1/2 or "external" in Hive 3 and want to convert it to an 'ACID' table in Hive 3, use the following to DDL:
+
+```sql
+ALTER TABLE mytable SET TBLPROPERTIES ('EXTERNAL'='FALSE','transactional'='true');
+-- Then run a Major Compaction to force the ACID table rewrite.
+ALTER TABLE mytable [PARTITION (partition_key = 'partition_value' [, ...])]
+  COMPACT 'MAJOR'[AND WAIT]
+  [WITH OVERWRITE TBLPROPERTIES ("property"="value" [, ...])];
+```
         
 ### Managed / ACID Table Compactions
 
