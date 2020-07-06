@@ -1,4 +1,6 @@
-# hdp3_upgrade_utils
+
+
+# hdp3_upgrade_utils (Newer version of this utility is available [here](https://github.com/dstreev/cloudera_upgrade_utils/blob/master/hive-sre/README.md) with the 'u3' option.
 
 Upgrading from Hive 1/2 to Hive 3 requires several metastore AND data changes to be successful.
 
