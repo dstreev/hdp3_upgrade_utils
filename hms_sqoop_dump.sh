@@ -73,7 +73,7 @@ if [ "${ORACLE}x" == "x" ]; then
     SELECT="${SELECT} \$CONDITIONS;"
 else
     # Escape the $ and remove the semi-colon.
-    SELECT="${SELECT} \\\$CONDITIONS"
+    SELECT="${SELECT} \$CONDITIONS"
 fi
 
 echo "SELECT: ${SELECT}"
