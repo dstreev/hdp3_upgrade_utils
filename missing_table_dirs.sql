@@ -24,8 +24,8 @@ WITH TBL_LOCATIONS  AS (
                          , tbl_name
                          , tbl_type
                          , NULL                                                                          AS part_name
-                         , concat('test ', '-e ',
-                                  regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2))                 AS hdfs_path_check
+                         , concat('test ', '-e ', '\'',
+                                  regexp_extract(tbl_location, 'hdfs://([^/]+)(.*)', 2), '\'')           AS hdfs_path_check
                          , count(1)
                        FROM
                            hms_dump_${ENV}
@@ -41,8 +41,8 @@ WITH TBL_LOCATIONS  AS (
                          , tbl_name
                          , tbl_type
                          , part_name
-                         , concat('test ', '-e ',
-                                  regexp_extract(part_location, 'hdfs://([^/]+)(.*)', 2)) AS hdfs_path_check
+                         , concat('test ', '-e ', '\'',
+                                  regexp_extract(part_location, 'hdfs://([^/]+)(.*)', 2), '\'') AS hdfs_path_check
                          , count(1)
                        FROM
                            hms_dump_${ENV}
